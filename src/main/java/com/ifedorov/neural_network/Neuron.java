@@ -1,78 +1,41 @@
 package com.ifedorov.neural_network;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class Neuron {
 
-    public static final class Linear implements Function<BigDecimal, BigDecimal> {
+    private final ActivationFn activationFn;
+    private BigDecimalWrapper cachedActivated;
 
-        private BigDecimal alfa;
-
-        public Linear(BigDecimal alfa) {
-            this.alfa = alfa;
-        }
-
-        @Override
-        public BigDecimal apply(BigDecimal bigDecimal) {
-            return bigDecimal.multiply(alfa);
-        }
-    };
-
-    public static final class Sigmoid implements Function<BigDecimal, BigDecimal> {
-
-        private BigDecimal alfa;
-
-        public Sigmoid(BigDecimal alfa) {
-            this.alfa = alfa;
-        }
-
-        @Override
-        public BigDecimal apply(BigDecimal bigDecimal) {
-            return
-                    BigDecimal.ONE.divide(
-                            BigDecimal.ONE.add(
-                                BigDecimal.valueOf(Math.exp(-1 * bigDecimal.doubleValue() * alfa.doubleValue()))
-                            )
-                    );
-        }
-    };
-
-    public static final Function<BigDecimal, BigDecimal> SIGMOID = new Function<BigDecimal, BigDecimal>() {
-        @Override
-        public BigDecimal apply(BigDecimal bigDecimal) {
-            return null;
-        }
-    };
-
-    private final Function<BigDecimal, BigDecimal> activationFn;
-    private BigDecimal cachedValue;
-
-    public Neuron(Function<BigDecimal, BigDecimal> activationFn) {
+    public Neuron(ActivationFn activationFn) {
         this.activationFn = activationFn;
     }
 
-    public BigDecimal calculate(List<BigDecimal> inputs, List<BigDecimal> weights) {
-        if(cachedValue == null) {
-            return (cachedValue = activationFn.apply(calculateSum(inputs, weights)));
-        } else {
-            return cachedValue;
-        }
+    public BigDecimalWrapper calculate(List<BigDecimalWrapper> inputs, List<BigDecimalWrapper> weights) {
+        BigDecimalWrapper sumOfInputSignals = calculateSum(inputs, weights);
+        return (cachedActivated = activationFn.calculate(sumOfInputSignals));
     }
 
-    private BigDecimal calculateSum(List<BigDecimal> inputs, List<BigDecimal> weights) {
+    public BigDecimalWrapper derivative() {
+        return activationFn.derivative(cachedActivated);
+    }
+
+    private BigDecimalWrapper calculateSum(List<BigDecimalWrapper> inputs, List<BigDecimalWrapper> weights) {
         if(inputs.size() != weights.size()) {
             throw new IllegalArgumentException("Number of inputs should match number of weights");
         }
         return IntStream.range(0, inputs.size())
                 .mapToObj(position -> weights.get(position).multiply(inputs.get(position)))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimalWrapper.ZERO, BigDecimalWrapper::add);
     }
 
-    public BigDecimal currentValue() {
-        return cachedValue;
+    public BigDecimalWrapper currentValue() {
+        return cachedActivated;
     }
 
+    @Override
+    public String toString() {
+        return activationFn.toString();
+    }
 }
