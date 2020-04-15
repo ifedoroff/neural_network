@@ -1,6 +1,5 @@
 package com.ifedorov.neural_network;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -19,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Model {
@@ -34,6 +32,21 @@ public class Model {
             throw new IllegalArgumentException("Number of Tiers should be equals to number of Weight matrices");
         this.tiers = new LinkedList<>(tiers);
         this.weightMatrices = weightMatrices;
+    }
+
+    public Model train(List<DataSet> dataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
+        int epoch = 0;
+        BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
+        while(epoch < maxEpochs && accuracy.compareTo(requiredAccuracy) > 0) {
+            accuracy = BigDecimalWrapper.ZERO;
+            for (DataSet dataSet : dataSets) {
+                BigDecimalWrapper currentError = this.train(dataSet);
+                accuracy = accuracy.add(currentError);
+            }
+            accuracy = accuracy.divide(new BigDecimalWrapper(dataSets.size()));
+            epoch++;
+        }
+        return this;
     }
 
     public BigDecimalWrapper train(DataSet dataSet) {
@@ -149,49 +162,8 @@ public class Model {
                 });
     }
 
-    public static class Builder {
-        private BigDecimalWrapper learningFactor;
-        private LinkedList<List<Neuron>> tiers = new LinkedList<>();
-        private List<WeightMatrix> weightMatrices = new ArrayList<>();
-
-        public Tier tier() {
-            return new Tier();
-        }
-
-        public Builder learningFactor(BigDecimal learningFactor) {
-            this.learningFactor = new BigDecimalWrapper(learningFactor);
-            return this;
-        }
-
-        public Model build() {
-            return new Model(tiers, weightMatrices, learningFactor);
-        }
-
-        public class Tier {
-
-            private List<Neuron> neurons = new ArrayList<>();
-            private WeightMatrix weights;
-            public Tier neuron(Neuron neuron) {
-                this.neurons.add(neuron);
-                return this;
-            }
-
-            public Tier weights(WeightMatrix weightMatrix) {
-                this.weights = weightMatrix;
-                return this;
-            }
-
-            public Builder build() {
-                tiers.add(this.neurons);
-                weightMatrices.add(weights);
-                return Builder.this;
-            }
-
-        }
-    }
-
     public static Model load(Path path) {
-        Model.Builder builder = new Model.Builder();
+        ModelBuilder builder = new ModelBuilder();
         try(XSSFWorkbook workbook = new XSSFWorkbook(path.toFile())) {
             Iterator<Sheet> sheets = workbook.sheetIterator();
             builder.learningFactor(BigDecimal.valueOf(sheets.next().getRow(0).getCell(0).getNumericCellValue()));
@@ -206,9 +178,9 @@ public class Model {
     }
 
 
-    private static void loadTier(Sheet sheet, Builder builder) {
+    private static void loadTier(Sheet sheet, ModelBuilder builder) {
         Iterator<Row> rows = sheet.rowIterator();
-        Builder.Tier tier = builder.tier();
+        ModelBuilder.Tier tier = builder.tier();
         WeightMatrix.Builder weightBuilder = new WeightMatrix.Builder();
         Row neuronRow = rows.next();
         StreamSupport.stream(

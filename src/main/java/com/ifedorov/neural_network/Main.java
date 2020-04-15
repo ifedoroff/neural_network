@@ -3,6 +3,16 @@ package com.ifedorov.neural_network;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -10,24 +20,83 @@ public class Main {
         @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
         private boolean helpRequested = false;
 
-        @CommandLine.Option(names = {"--trainSetFile" }, description = "Path to file with training data set")
-        private File trainingSetFile;
-
-        @CommandLine.Option(names = {"--trainOutputFile" }, description = "Path to file with training data set")
-        private File trainingOutputFile;
-
-        @CommandLine.Option(names = {"--testSetFile" }, description = "Path to file with test data set")
-        private File testSetFile;
-
-        @CommandLine.Option(names = {"--testOutputFile" }, description = "Path to file with test data set")
-        private File testOutputFile;
-
-        @CommandLine.Option(names = {"--neuralNetwork" }, description = "Path to file with Neural Network weights/neurons configuration")
+        @CommandLine.Option(names = {"--model" }, required = true, description = "Path to file with Neural Network weights/neurons configuration")
         private File modelInputFile;
+
+        @CommandLine.ArgGroup(exclusive = true)
+        private Mode executionMode;
+
+        static class Mode {
+            @CommandLine.ArgGroup(exclusive = false)
+            Training training;
+
+            @CommandLine.ArgGroup(exclusive = false)
+            Predict predict;
+        }
+
+        static class Training {
+            @CommandLine.Option(names = {"--trainSetFile" }, description = "Path to file with training data set", required = true)
+            private File trainingSetFile;
+
+            @CommandLine.Option(names = {"--trainingOutputFile" }, description = "Path to file with training data set", required = true)
+            private File trainingOutputFile;
+
+            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = true)
+            private Double accuracy;
+
+            @CommandLine.Option(names = {"--trainingEpochs" }, description = "Path to file with training data set", required = true)
+            private int epochs;
+        }
+
+        static class Predict {
+            @CommandLine.Option(names = {"--predictSetFile" }, description = "Path to file with test data set", required = true)
+            private File predictSetFile;
+
+            @CommandLine.Option(names = {"--predictOutputFile" }, description = "Path to file with test data set", required = true)
+            private File predictOutputFile;
+        }
     }
 
     public static void main(String[] args) {
         Options options = new Options();
         new CommandLine(options).parseArgs(args);
+        Options.Training train = options.executionMode.training;
+        Options.Predict predict = options.executionMode.predict;
+        Model model = Model.load(options.modelInputFile.toPath());
+        if(train != null) {
+            model
+                .train(DataSet.loadFromTextFile(train.trainingSetFile.toPath()), train.epochs, new BigDecimalWrapper(train.accuracy))
+                .saveTo(train.trainingOutputFile.toPath());
+        } else {
+            DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));
+            List<String> outputLines =
+                    readPredictionInput(predict.predictSetFile.toPath())
+                    .stream()
+                    .map(dataSet -> model.calculate(dataSet).stream()
+                            .map(BigDecimalWrapper::bigDecimal)
+                            .map(BigDecimal::doubleValue)
+                            .map(formatter::format))
+                    .map(stringStream -> stringStream.reduce((s, s2) -> s + "," + s2).get())
+                    .collect(Collectors.toList());
+            try {
+                Files.write(predict.predictOutputFile.toPath(), outputLines);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to save results");
+            }
+        }
+    }
+
+    private static List<List<BigDecimalWrapper>> readPredictionInput(Path file) {
+        try {
+            return Files.readAllLines(file).stream()
+                    .map(line -> {
+                        return Arrays.stream(line.split(","))
+                                .map(Double::valueOf)
+                                .map(BigDecimalWrapper::new)
+                                .collect(Collectors.toList());
+                    }).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read input values from " + file);
+        }
     }
 }

@@ -1,7 +1,5 @@
 package com.ifedorov.neural_network;
 
-import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
-import org.apache.commons.math3.util.BigReal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,14 +10,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class TestModel {
 
   @Test
   void testSaveAndLoad() throws IOException, InterruptedException {
-    Model model = new Model.Builder()
+    Model model = new ModelBuilder()
             .learningFactor(BigDecimal.valueOf(0.9))
             .tier()
             .neuron(new Neuron(new ActivationFn.Sigmoid(new BigDecimalWrapper(0.9))))
@@ -47,7 +43,7 @@ public class TestModel {
     dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
     dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ZERO)));
     int epoch = 0;
-    BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.00001);
+    BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.000001);
     BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
     while(epoch < 1000000 && accuracy.compareTo(requiredAccuracy) > 0) {
       accuracy = BigDecimalWrapper.ZERO;
@@ -58,6 +54,7 @@ public class TestModel {
       accuracy = accuracy.divide(new BigDecimalWrapper(dataSets.size()));
       epoch++;
     }
+    model.printState();
 
     List<BigDecimalWrapper> output1 = model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO));
     List<BigDecimalWrapper> output2 = model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE));
