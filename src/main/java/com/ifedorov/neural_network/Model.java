@@ -34,34 +34,50 @@ public class Model {
         this.weightMatrices = weightMatrices;
     }
 
-    public Model train(List<DataSet> dataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
+    public TrainingResult train(List<TrainingDataSet> trainingDataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
         int epoch = 0;
         BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
         while(epoch < maxEpochs && accuracy.compareTo(requiredAccuracy) > 0) {
             accuracy = BigDecimalWrapper.ZERO;
-            for (DataSet dataSet : dataSets) {
-                BigDecimalWrapper currentError = this.train(dataSet);
+            for (TrainingDataSet trainingDataSet : trainingDataSets) {
+                BigDecimalWrapper currentError = this.train(trainingDataSet);
+                trainingDataSet.setAccuracy(currentError);
+                trainingDataSet.setActualOutput(currentOutputValues());
                 accuracy = accuracy.add(currentError);
             }
-            accuracy = accuracy.divide(new BigDecimalWrapper(dataSets.size()));
+            accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
             epoch++;
         }
-        return this;
+        return new TrainingResult(epoch, accuracy, trainingDataSets);
     }
 
-    public BigDecimalWrapper train(DataSet dataSet) {
-        if(dataSet.input.size() != tiers.getFirst().size())
+    public BigDecimalWrapper train(TrainingDataSet trainingDataSet) {
+        if(trainingDataSet.input.size() != tiers.getFirst().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
-        if(dataSet.output.size() != tiers.getLast().size())
+        if(trainingDataSet.output.size() != tiers.getLast().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
+        forwardPass(trainingDataSet.input);
+        backwardPass(trainingDataSet.output, trainingDataSet.input);
+        return calculateAccuracy(trainingDataSet.output);
+    }
+
+    public PredictionDataSet predict(PredictionDataSet dataSet) {
         forwardPass(dataSet.input);
-        backwardPass(dataSet.output, dataSet.input);
-        return calculateAccuracy(dataSet.output);
+        dataSet.setOutput(tiers.getLast().stream().map(Neuron::currentValue).collect(Collectors.toList()));
+        return dataSet;
     }
 
-    public List<BigDecimalWrapper> calculate(List<BigDecimalWrapper> inputs) {
-        forwardPass(inputs);
-        return tiers.getLast().stream().map(Neuron::currentValue).collect(Collectors.toList());
+    public TestResult test(List<TrainingDataSet> trainingDataSets) {
+        BigDecimalWrapper accuracy = BigDecimalWrapper.ZERO;
+        for (TrainingDataSet trainingDataSet : trainingDataSets) {
+            this.forwardPass(trainingDataSet.input);
+            BigDecimalWrapper currentError = calculateAccuracy(trainingDataSet.output);
+            trainingDataSet.setAccuracy(currentError);
+            trainingDataSet.setActualOutput(currentOutputValues());
+            accuracy = accuracy.add(currentError);
+        }
+        accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
+        return new TestResult(accuracy, trainingDataSets);
     }
 
     private BigDecimalWrapper calculateAccuracy(List<BigDecimalWrapper> expectedOutputs) {
@@ -226,5 +242,12 @@ public class Model {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<BigDecimalWrapper> currentOutputValues() {
+        List<Neuron> outputTier = tiers.getLast();
+        return IntStream.range(0, outputTier.size())
+                .mapToObj(index -> outputTier.get(index).currentValue())
+                .collect(Collectors.toList());
     }
 }

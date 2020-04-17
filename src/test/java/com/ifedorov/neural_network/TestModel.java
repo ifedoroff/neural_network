@@ -37,38 +37,38 @@ public class TestModel {
             )
             .build()
             .build();
-    List<DataSet> dataSets = new ArrayList<>();
-    dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
-    dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ONE)));
-    dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
-    dataSets.add(new DataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ZERO)));
+    List<TrainingDataSet> trainingDataSets = new ArrayList<>();
+    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ZERO)));
     int epoch = 0;
     BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.000001);
     BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
     while(epoch < 1000000 && accuracy.compareTo(requiredAccuracy) > 0) {
       accuracy = BigDecimalWrapper.ZERO;
-      for (DataSet dataSet : dataSets) {
-        BigDecimalWrapper currentError = model.train(dataSet);
+      for (TrainingDataSet trainingDataSet : trainingDataSets) {
+        BigDecimalWrapper currentError = model.train(trainingDataSet);
         accuracy = accuracy.add(currentError);
       }
-      accuracy = accuracy.divide(new BigDecimalWrapper(dataSets.size()));
+      accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
       epoch++;
     }
     model.printState();
 
-    List<BigDecimalWrapper> output1 = model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO));
-    List<BigDecimalWrapper> output2 = model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE));
-    List<BigDecimalWrapper> output3 = model.calculate(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO));
-    List<BigDecimalWrapper> output4 = model.calculate(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE));
+    List<BigDecimalWrapper> output1 = model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO))).getOutput();
+    List<BigDecimalWrapper> output2 = model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE))).getOutput();
+    List<BigDecimalWrapper> output3 = model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO))).getOutput();
+    List<BigDecimalWrapper> output4 = model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE))).getOutput();
 
     Path modelFilePath = Paths.get(System.getProperty("user.dir")).resolve("build/test_model.xlsx");
     model.saveTo(modelFilePath);
 
     model = Model.load(modelFilePath);
-    Assertions.assertIterableEquals(output1, model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO)));
-    Assertions.assertIterableEquals(output2, model.calculate(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE)));
-    Assertions.assertIterableEquals(output3, model.calculate(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO)));
-    Assertions.assertIterableEquals(output4, model.calculate(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE)));
+    Assertions.assertIterableEquals(output1, model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO))).getOutput());
+    Assertions.assertIterableEquals(output2, model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE))).getOutput());
+    Assertions.assertIterableEquals(output3, model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO))).getOutput());
+    Assertions.assertIterableEquals(output4, model.predict(new PredictionDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE))).getOutput());
   }
 
 }

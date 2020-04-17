@@ -23,7 +23,7 @@ public class Main {
         @CommandLine.Option(names = {"--model" }, required = true, description = "Path to file with Neural Network weights/neurons configuration")
         private File modelInputFile;
 
-        @CommandLine.ArgGroup(exclusive = true)
+        @CommandLine.ArgGroup(exclusive = false)
         private Mode executionMode;
 
         static class Mode {
@@ -32,6 +32,9 @@ public class Main {
 
             @CommandLine.ArgGroup(exclusive = false)
             Predict predict;
+
+            @CommandLine.ArgGroup(exclusive = false)
+            Test test;
         }
 
         static class Training {
@@ -55,6 +58,14 @@ public class Main {
             @CommandLine.Option(names = {"--predictOutputFile" }, description = "Path to file with test data set", required = true)
             private File predictOutputFile;
         }
+
+        static class Test {
+            @CommandLine.Option(names = {"--testSetFile" }, description = "Path to file with test data set", required = true)
+            private File predictSetFile;
+
+            @CommandLine.Option(names = {"--testOutputFile" }, description = "Path to file with test data set", required = true)
+            private File predictOutputFile;
+        }
     }
 
     public static void main(String[] args) {
@@ -62,17 +73,26 @@ public class Main {
         new CommandLine(options).parseArgs(args);
         Options.Training train = options.executionMode.training;
         Options.Predict predict = options.executionMode.predict;
+        Options.Test test = options.executionMode.test;
         Model model = Model.load(options.modelInputFile.toPath());
         if(train != null) {
+            TrainingResult result = model
+                    .train(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()), train.epochs, new BigDecimalWrapper(train.accuracy));
+            model.saveTo(train.trainingOutputFile.toPath());
+        }
+        if(test != null) {
             model
-                .train(DataSet.loadFromTextFile(train.trainingSetFile.toPath()), train.epochs, new BigDecimalWrapper(train.accuracy))
-                .saveTo(train.trainingOutputFile.toPath());
-        } else {
+                    .test(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()));
+        }
+        if(predict != null){
             DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));
             List<String> outputLines =
                     readPredictionInput(predict.predictSetFile.toPath())
                     .stream()
-                    .map(dataSet -> model.calculate(dataSet).stream()
+                    .map(dataSet -> model
+                            .predict(dataSet)
+                            .getOutput()
+                            .stream()
                             .map(BigDecimalWrapper::bigDecimal)
                             .map(BigDecimal::doubleValue)
                             .map(formatter::format))
@@ -86,14 +106,14 @@ public class Main {
         }
     }
 
-    private static List<List<BigDecimalWrapper>> readPredictionInput(Path file) {
+    private static List<PredictionDataSet> readPredictionInput(Path file) {
         try {
             return Files.readAllLines(file).stream()
                     .map(line -> {
-                        return Arrays.stream(line.split(","))
+                        return new PredictionDataSet(Arrays.stream(line.split(","))
                                 .map(Double::valueOf)
                                 .map(BigDecimalWrapper::new)
-                                .collect(Collectors.toList());
+                                .collect(Collectors.toList()));
                     }).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException("Unable to read input values from " + file);
