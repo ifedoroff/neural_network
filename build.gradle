@@ -25,6 +25,16 @@ compileJava {
     options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
 }
 
+jar {
+    manifest {
+        attributes "Main-Class": "com.ifedorov.neural_network.Main"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 test {
     useJUnitPlatform()
     testLogging {

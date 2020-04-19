@@ -23,7 +23,7 @@ public class Main {
         @CommandLine.Option(names = {"--model" }, required = true, description = "Path to file with Neural Network weights/neurons configuration")
         private File modelInputFile;
 
-        @CommandLine.ArgGroup(exclusive = false)
+        @CommandLine.ArgGroup(exclusive = false, validate = true)
         private Mode executionMode;
 
         static class Mode {
@@ -71,6 +71,9 @@ public class Main {
     public static void main(String[] args) {
         Options options = new Options();
         new CommandLine(options).parseArgs(args);
+        if(options.executionMode == null) {
+            throw new RuntimeException("Please specify one of the execution modes");
+        }
         Options.Training train = options.executionMode.training;
         Options.Predict predict = options.executionMode.predict;
         Options.Test test = options.executionMode.test;
