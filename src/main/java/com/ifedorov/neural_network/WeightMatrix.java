@@ -27,6 +27,14 @@ public class WeightMatrix {
         return new WeightMatrix((Array2DRowFieldMatrix<BigReal>) matrix.transpose());
     }
 
+    public int rowDimension() {
+        return matrix.getRowDimension();
+    }
+
+    public int columnDimension() {
+        return matrix.getColumnDimension();
+    }
+
     public void walk(Visitor visitor) {
         matrix.walkInRowOrder(new FieldMatrixChangingVisitor<BigReal>() {
             @Override
@@ -73,7 +81,15 @@ public class WeightMatrix {
 
     public static class Builder {
 
+        private final int rowDimension;
+        private final int columnDimension;
         private List<BigDecimal[]> weights = new ArrayList<>();
+
+        public Builder(int rowDimension, int columnDimension) {
+
+            this.rowDimension = rowDimension;
+            this.columnDimension = columnDimension;
+        }
 
         public Builder row(BigDecimal[] row) {
             weights.add(row);
@@ -81,6 +97,16 @@ public class WeightMatrix {
         }
 
         public WeightMatrix build() {
+            int rowsMissing = rowDimension - weights.size();
+            for (int i = 0; i < rowsMissing; i++) {
+                List<BigDecimal> row = IntStream.range(0, columnDimension).mapToObj((x) -> BigDecimal.ZERO).collect(Collectors.toList());
+                weights.add(
+                        row.toArray(new BigDecimal[0])
+                );
+            }
+            for (BigDecimal[] row : weights) {
+            }
+
             return new WeightMatrix(new Array2DRowFieldMatrix<BigReal>(weights.stream()
                     .map(bigDecimals -> Arrays.stream(bigDecimals).map(BigReal::new).collect(Collectors.toList()))
                     .map(bigDecimals -> bigDecimals.toArray(new BigReal[0]))

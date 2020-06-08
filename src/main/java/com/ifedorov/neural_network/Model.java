@@ -1,6 +1,7 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.collect.Lists;
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -11,6 +12,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -32,6 +34,18 @@ public class Model {
             throw new IllegalArgumentException("Number of Tiers should be equals to number of Weight matrices");
         this.tiers = new LinkedList<>(tiers);
         this.weightMatrices = weightMatrices;
+    }
+
+    public int getInputDimension() {
+        return weightMatrices.get(0).rowDimension();
+    }
+
+    public int getOutputDimension() {
+        return tiers.getLast().size();
+    }
+
+    public List<WeightMatrix> weights() {
+        return weightMatrices;
     }
 
     public TrainingResult train(List<TrainingDataSet> trainingDataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
@@ -179,48 +193,79 @@ public class Model {
     }
 
     public static Model load(Path path) {
-        ModelBuilder builder = new ModelBuilder();
         try(XSSFWorkbook workbook = new XSSFWorkbook(path.toFile())) {
-            Iterator<Sheet> sheets = workbook.sheetIterator();
-            builder.learningFactor(BigDecimal.valueOf(sheets.next().getRow(0).getCell(0).getNumericCellValue()));
-            while (sheets.hasNext()) {
-                Sheet sheet = sheets.next();
-                loadTier(sheet, builder);
-            }
-            return builder.build();
+            return load(workbook);
         } catch (InvalidFormatException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public static Model load(InputStream is) {
+        try(XSSFWorkbook workbook = new XSSFWorkbook(is)) {
+            return load(workbook);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    private static void loadTier(Sheet sheet, ModelBuilder builder) {
+    public static Model load(XSSFWorkbook workbook) {
+        ModelBuilder builder = new ModelBuilder();
+
+        Iterator<Sheet> sheets = workbook.sheetIterator();
+        Sheet firstSheet = sheets.next();
+        builder.learningFactor(BigDecimal.valueOf(firstSheet.getRow(0).getCell(0).getNumericCellValue()));
+        int inputTierSize = BigDecimal.valueOf(firstSheet.getRow(1).getCell(0).getNumericCellValue()).intValue();
+        int outputTierSize = BigDecimal.valueOf(firstSheet.getRow(1).getCell(1).getNumericCellValue()).intValue();
+        builder.expectedInputSize(inputTierSize).expectedOutputSize(outputTierSize);
+        int previousTierSize = inputTierSize;
+        while (sheets.hasNext()) {
+            Sheet sheet = sheets.next();
+            previousTierSize = loadTier(sheet, builder, previousTierSize);
+        }
+        return builder.build();
+
+    }
+
+
+    private static int loadTier(Sheet sheet, ModelBuilder builder, int previousTierSize) {
         Iterator<Row> rows = sheet.rowIterator();
         ModelBuilder.Tier tier = builder.tier();
-        WeightMatrix.Builder weightBuilder = new WeightMatrix.Builder();
         Row neuronRow = rows.next();
         StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(neuronRow.cellIterator(), Spliterator.ORDERED),
                 false)
                 .forEach(cell -> tier.neuron(new Neuron(ActivationFn.fromString(cell.getStringCellValue()))));
+        int currentTierSize = tier.neuronCount();
+        WeightMatrix.Builder weightBuilder = new WeightMatrix.Builder(previousTierSize, currentTierSize);
         while(rows.hasNext()) {
             Row current = rows.next();
-            Iterator<Cell> cells = current.cellIterator();
             List<BigDecimal> weights = Lists.newArrayList();
-            while(cells.hasNext()) {
-                weights.add(BigDecimal.valueOf(Double.valueOf(cells.next().getNumericCellValue())));
+            for (int i = 0; i < currentTierSize; i++) {
+                BigDecimal cellValue;
+                Cell cell = current.getCell(i);
+                if(cell == null) {
+                    cellValue = BigDecimal.ZERO;
+                } else {
+                    cellValue = BigDecimal.valueOf(Double.valueOf(cell.getNumericCellValue()));
+                }
+                weights.add(cellValue);
             }
             weightBuilder.row(weights.toArray(new BigDecimal[0]));
         }
         tier.weights(weightBuilder.build()).build();
+        return currentTierSize;
     }
 
     public void saveTo(Path path) {
         try(XSSFWorkbook workbook = new XSSFWorkbook()) {
-            workbook.createSheet("Learning Factor")
+            XSSFSheet firstSheet = workbook.createSheet("Learning Factor");
+            firstSheet
                     .createRow(0)
                     .createCell(0)
                     .setCellValue(learningFactor.bigDecimal().doubleValue());
+            XSSFRow firstRow = firstSheet.createRow(1);
+            firstRow.createCell(0).setCellValue(getInputDimension());
+            firstRow.createCell(1).setCellValue(getOutputDimension());
             for (int i = 0; i < tiers.size(); i++) {
                 XSSFSheet sheet = workbook.createSheet("Tier " + (i + 1));
                 WeightMatrix weights = weightMatrices.get(i);

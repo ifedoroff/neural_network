@@ -80,7 +80,7 @@ public class Main {
         Model model = Model.load(options.modelInputFile.toPath());
         if(train != null) {
             TrainingResult result = model
-                    .train(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()), train.epochs, new BigDecimalWrapper(train.accuracy));
+                    .train(TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()), train.epochs, new BigDecimalWrapper(train.accuracy));
             model.saveTo(train.trainingOutputFile.toPath());
         }
         if(test != null) {
