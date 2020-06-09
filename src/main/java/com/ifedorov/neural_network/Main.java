@@ -79,13 +79,18 @@ public class Main {
         Options.Test test = options.executionMode.test;
         Model model = Model.load(options.modelInputFile.toPath());
         if(train != null) {
+            List<TrainingDataSet> trainingDataSets = TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension());
             TrainingResult result = model
-                    .train(TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()), train.epochs, new BigDecimalWrapper(train.accuracy));
+                    .train(
+                            NormalizedTrainingDataSet.normalize(trainingDataSets),
+                            train.epochs,
+                            new BigDecimalWrapper(train.accuracy)
+                    );
             model.saveTo(train.trainingOutputFile.toPath());
         }
         if(test != null) {
             model
-                    .test(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()));
+                    .test(NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath())));
         }
         if(predict != null){
             DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));

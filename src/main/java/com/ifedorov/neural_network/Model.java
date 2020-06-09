@@ -48,12 +48,12 @@ public class Model {
         return weightMatrices;
     }
 
-    public TrainingResult train(List<TrainingDataSet> trainingDataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
+    public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
         int epoch = 0;
         BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
         while(epoch < maxEpochs && accuracy.compareTo(requiredAccuracy) > 0) {
             accuracy = BigDecimalWrapper.ZERO;
-            for (TrainingDataSet trainingDataSet : trainingDataSets) {
+            for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
                 BigDecimalWrapper currentError = this.train(trainingDataSet);
                 trainingDataSet.setAccuracy(currentError);
                 trainingDataSet.setActualOutput(currentOutputValues());
@@ -65,7 +65,7 @@ public class Model {
         return new TrainingResult(epoch, accuracy, trainingDataSets);
     }
 
-    public BigDecimalWrapper train(TrainingDataSet trainingDataSet) {
+    public BigDecimalWrapper train(NormalizedTrainingDataSet trainingDataSet) {
         if(trainingDataSet.input.size() != tiers.getFirst().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
         if(trainingDataSet.output.size() != tiers.getLast().size())
@@ -81,7 +81,7 @@ public class Model {
         return dataSet;
     }
 
-    public TestResult test(List<TrainingDataSet> trainingDataSets) {
+    public TestResult test(List<NormalizedTrainingDataSet> trainingDataSets) {
         BigDecimalWrapper accuracy = BigDecimalWrapper.ZERO;
         for (TrainingDataSet trainingDataSet : trainingDataSets) {
             this.forwardPass(trainingDataSet.input);

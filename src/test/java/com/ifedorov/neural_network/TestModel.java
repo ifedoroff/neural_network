@@ -43,21 +43,21 @@ public class TestModel {
             .expectedOutputSize(1)
             .expectedInputSize(2)
             .build();
-    List<TrainingDataSet> trainingDataSets = new ArrayList<>();
-    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
-    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ONE)));
-    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
-    trainingDataSets.add(new TrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ZERO)));
+    List<NormalizedTrainingDataSet> trainingDataSets = new ArrayList<>();
+    trainingDataSets.add(new NormalizedTrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new NormalizedTrainingDataSet(Arrays.asList(BigDecimalWrapper.ZERO, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new NormalizedTrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ZERO), Arrays.asList(BigDecimalWrapper.ONE)));
+    trainingDataSets.add(new NormalizedTrainingDataSet(Arrays.asList(BigDecimalWrapper.ONE, BigDecimalWrapper.ONE), Arrays.asList(BigDecimalWrapper.ZERO)));
     train(model, trainingDataSets);
   }
 
-  private void train(Model model, List<TrainingDataSet> trainingDataSets) {
+  private void train(Model model, List<NormalizedTrainingDataSet> trainingDataSets) {
     int epoch = 0;
     BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.000001);
     BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
     while(epoch < 1000000 && accuracy.compareTo(requiredAccuracy) > 0) {
       accuracy = BigDecimalWrapper.ZERO;
-      for (TrainingDataSet trainingDataSet : trainingDataSets) {
+      for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
         BigDecimalWrapper currentError = model.train(trainingDataSet);
         accuracy = accuracy.add(currentError);
       }

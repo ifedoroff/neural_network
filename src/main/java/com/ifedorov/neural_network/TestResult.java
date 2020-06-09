@@ -4,9 +4,9 @@ import java.util.List;
 
 public class TestResult {
     public final BigDecimalWrapper accuracy;
-    public List<TrainingDataSet> trainingTrainingDataSets;
+    public List<? extends TrainingDataSet> trainingTrainingDataSets;
 
-    public TestResult(BigDecimalWrapper accuracy, List<TrainingDataSet> trainingTrainingDataSets) {
+    public TestResult(BigDecimalWrapper accuracy, List<? extends TrainingDataSet> trainingTrainingDataSets) {
         this.accuracy = accuracy;
         this.trainingTrainingDataSets = trainingTrainingDataSets;
     }
