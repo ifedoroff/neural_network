@@ -1,5 +1,6 @@
 package com.ifedorov.neural_network;
 
+import com.google.common.collect.Lists;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -25,6 +26,9 @@ public class Main {
 
         @CommandLine.ArgGroup(exclusive = false, validate = true)
         private Mode executionMode;
+
+        @CommandLine.Option(names = {"--normalizedTrainSetFile" }, description = "Path where to save normalized training data set", required = true)
+        private File normalizedTrainingSetOutputFile;
 
         static class Mode {
             @CommandLine.ArgGroup(exclusive = false)
@@ -80,17 +84,22 @@ public class Main {
         Model model = Model.load(options.modelInputFile.toPath());
         if(train != null) {
             List<TrainingDataSet> trainingDataSets = TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension());
+            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(trainingDataSets);
+            NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, options.normalizedTrainingSetOutputFile);
             TrainingResult result = model
                     .train(
-                            NormalizedTrainingDataSet.normalize(trainingDataSets),
-                            train.epochs,
-                            new BigDecimalWrapper(train.accuracy)
+                            normalizedTrainingSet,
+                            new BaseStopIndicator(train.epochs, Lists.newArrayList(), new BigDecimalWrapper(train.accuracy))
                     );
+            System.out.println("accuracy: " + result.accuracy);
+            System.out.println("epochs: " + result.epochs);
+            model.printState();
             model.saveTo(train.trainingOutputFile.toPath());
         }
         if(test != null) {
-            model
-                    .test(NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath())));
+            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()));
+            NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, options.normalizedTrainingSetOutputFile);
+            model.test(normalizedTrainingSet);
         }
         if(predict != null){
             DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));

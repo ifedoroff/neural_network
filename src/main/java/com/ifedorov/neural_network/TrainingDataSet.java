@@ -77,7 +77,7 @@ public class TrainingDataSet {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Unable to open file with Training dataset");
+            throw new RuntimeException("Unable to open file with Training dataset", e);
         }
     }
 
@@ -89,7 +89,7 @@ public class TrainingDataSet {
             }
 
         } catch (InvalidFormatException|IOException e) {
-            throw new RuntimeException("Unable to open file with Training dataset");
+            throw new RuntimeException("Unable to open file with Training dataset", e);
         }
     }
 

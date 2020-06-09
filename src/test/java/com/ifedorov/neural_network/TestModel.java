@@ -53,17 +53,18 @@ public class TestModel {
 
   private void train(Model model, List<NormalizedTrainingDataSet> trainingDataSets) {
     int epoch = 0;
-    BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.000001);
-    BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
-    while(epoch < 1000000 && accuracy.compareTo(requiredAccuracy) > 0) {
-      accuracy = BigDecimalWrapper.ZERO;
-      for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
-        BigDecimalWrapper currentError = model.train(trainingDataSet);
-        accuracy = accuracy.add(currentError);
-      }
-      accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
-      epoch++;
-    }
+//    BigDecimalWrapper requiredAccuracy= new BigDecimalWrapper(0.000001);
+//    BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
+//    while(epoch < 1000000 && accuracy.compareTo(requiredAccuracy) > 0) {
+//      accuracy = BigDecimalWrapper.ZERO;
+//      for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
+//        BigDecimalWrapper currentError = model.train(trainingDataSet);
+//        accuracy = accuracy.add(currentError);
+//      }
+//      accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
+//      epoch++;
+//    }
+    model.train(trainingDataSets, new BaseStopIndicator(1000000, Lists.newArrayList(), new BigDecimalWrapper(0.0001)));
     model.printState();
   }
 

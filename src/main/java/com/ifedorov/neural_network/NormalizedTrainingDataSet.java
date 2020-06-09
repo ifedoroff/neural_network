@@ -1,7 +1,13 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.collect.Lists;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +30,24 @@ public class NormalizedTrainingDataSet extends TrainingDataSet {
                 .findFirst();
         if(denormalized.isPresent()) {
             throw new IllegalArgumentException("One of the values is not normalized: " + values);
+        }
+    }
+
+    public static void saveTo(List<NormalizedTrainingDataSet> dataSets, File file) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()){
+            XSSFSheet sheet = workbook.createSheet();
+            for (int i = 0; i < dataSets.size(); i++) {
+                XSSFRow row = sheet.createRow(i);
+                NormalizedTrainingDataSet dataSet = dataSets.get(i);
+                for (int j = 0; j < dataSet.input.size(); j++) {
+                    row.createCell(j).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
+                }
+            }
+            try (OutputStream os = new FileOutputStream(file)) {
+                workbook.write(os);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to save normalized weights to file", e);
         }
     }
 
@@ -51,7 +75,11 @@ public class NormalizedTrainingDataSet extends TrainingDataSet {
                         BigDecimalWrapper currentValue = inputs.get(i);
                         BigDecimalWrapper minValue = minValues.get(i);
                         BigDecimalWrapper maxValue = maxValues.get(i);
-                        inputs.set(i, currentValue.subtract(minValue).divide(maxValue.subtract(minValue)));
+                        if(currentValue.equals(minValue) && maxValue.equals(minValue)) {
+                            inputs.set(i, currentValue);
+                        } else {
+                            inputs.set(i, currentValue.subtract(minValue).divide(maxValue.subtract(minValue)));
+                        }
                     }
                     return new NormalizedTrainingDataSet(trainingDataSet);
                 }).collect(Collectors.toList());

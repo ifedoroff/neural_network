@@ -104,8 +104,6 @@ public class WeightMatrix {
                         row.toArray(new BigDecimal[0])
                 );
             }
-            for (BigDecimal[] row : weights) {
-            }
 
             return new WeightMatrix(new Array2DRowFieldMatrix<BigReal>(weights.stream()
                     .map(bigDecimals -> Arrays.stream(bigDecimals).map(BigReal::new).collect(Collectors.toList()))

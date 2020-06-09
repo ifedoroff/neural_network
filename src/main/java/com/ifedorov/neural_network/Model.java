@@ -1,7 +1,6 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.collect.Lists;
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -48,10 +47,10 @@ public class Model {
         return weightMatrices;
     }
 
-    public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, int maxEpochs, BigDecimalWrapper requiredAccuracy) {
+    public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, StopIndicator stopIndicator) {
         int epoch = 0;
-        BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(requiredAccuracy);
-        while(epoch < maxEpochs && accuracy.compareTo(requiredAccuracy) > 0) {
+        BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(BigDecimalWrapper.ONE);
+        while(!stopIndicator.shouldStopTraining(this, epoch, accuracy)) {
             accuracy = BigDecimalWrapper.ZERO;
             for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
                 BigDecimalWrapper currentError = this.train(trainingDataSet);
@@ -66,8 +65,6 @@ public class Model {
     }
 
     public BigDecimalWrapper train(NormalizedTrainingDataSet trainingDataSet) {
-        if(trainingDataSet.input.size() != tiers.getFirst().size())
-            throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
         if(trainingDataSet.output.size() != tiers.getLast().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
         forwardPass(trainingDataSet.input);

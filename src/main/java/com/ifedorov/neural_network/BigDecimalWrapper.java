@@ -76,4 +76,9 @@ public class BigDecimalWrapper implements Comparable<BigDecimalWrapper> {
         BigDecimalWrapper that = (BigDecimalWrapper) o;
         return value.equals(that.value);
     }
+
+    @Override
+    public String toString() {
+        return bigDecimal().toString();
+    }
 }
