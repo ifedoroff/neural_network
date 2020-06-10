@@ -5,6 +5,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -110,8 +111,12 @@ public class Model {
             weightMatrix.walk(new WeightMatrix.Visitor() {
                 @Override
                 public BigDecimalWrapper visit(int row, int column, BigDecimalWrapper value) {
-                    BigDecimalWrapper delta = lowerTier.get(row).currentValue().multiply(learningFactor).multiply(levelErrors.get(column));
-                    return value.add(delta);
+                    if(value == null) {
+                        return null;
+                    } else {
+                        BigDecimalWrapper delta = lowerTier.get(row).currentValue().multiply(learningFactor).multiply(levelErrors.get(column));
+                        return value.add(delta);
+                    }
                 }
             });
         }
@@ -141,7 +146,14 @@ public class Model {
                         Neuron neuron = currentTier.get(neuronIndex);
                         List<BigDecimalWrapper> weights = currentToHigherTierWeightMatrix.getWeightForNeuron(neuronIndex);
                         return IntStream.range(0, weights.size())
-                                .mapToObj(weightIndex -> weights.get(weightIndex).multiply(finalHigherLevelError.get(weightIndex)))
+                                .mapToObj(weightIndex -> {
+                                    BigDecimalWrapper weight = weights.get(weightIndex);
+                                    if(weight == null) {
+                                        return BigDecimalWrapper.ZERO;
+                                    } else {
+                                        return weight.multiply(finalHigherLevelError.get(weightIndex));
+                                    }
+                                })
                                 .reduce(BigDecimalWrapper::add)
                                 .get().multiply(neuron.derivative());
                     }).collect(Collectors.toList());
@@ -241,7 +253,7 @@ public class Model {
                 BigDecimal cellValue;
                 Cell cell = current.getCell(i);
                 if(cell == null) {
-                    cellValue = BigDecimal.ZERO;
+                    cellValue = null;
                 } else {
                     cellValue = BigDecimal.valueOf(Double.valueOf(cell.getNumericCellValue()));
                 }
@@ -275,7 +287,14 @@ public class Model {
                         .forEach(weightRow -> {
                             XSSFRow sheetRow = sheet.createRow(rowPosition.incrementAndGet());
                             AtomicInteger cellPosition = new AtomicInteger();
-                            weightRow.forEach(weight -> sheetRow.createCell(cellPosition.getAndIncrement()).setCellValue(weight.bigDecimal().doubleValue()));
+                            weightRow.forEach(weight -> {
+                                XSSFCell cell = sheetRow.createCell(cellPosition.getAndIncrement());
+                                if(weight == null) {
+                                    cell.setCellValue("");
+                                } else {
+                                    cell.setCellValue(weight.bigDecimal().doubleValue());
+                                }
+                            });
                         });
             }
             try (OutputStream os = new FileOutputStream(path.toFile())){

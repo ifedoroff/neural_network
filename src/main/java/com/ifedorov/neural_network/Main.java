@@ -65,10 +65,10 @@ public class Main {
 
         static class Test {
             @CommandLine.Option(names = {"--testSetFile" }, description = "Path to file with test data set", required = true)
-            private File predictSetFile;
+            private File testSetFile;
 
             @CommandLine.Option(names = {"--testOutputFile" }, description = "Path to file with test data set", required = true)
-            private File predictOutputFile;
+            private File testOutputFile;
         }
     }
 
@@ -97,9 +97,19 @@ public class Main {
             model.saveTo(train.trainingOutputFile.toPath());
         }
         if(test != null) {
-            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromTextFile(train.trainingSetFile.toPath()));
+            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
             NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, options.normalizedTrainingSetOutputFile);
-            model.test(normalizedTrainingSet);
+            TestResult testResult = model.test(normalizedTrainingSet);
+            List<BigDecimalWrapper> results = testResult.trainingDataSets.stream().map(o -> o.output.get(0))
+                    .collect(Collectors.toList());
+            for (int i = 0; i < results.size(); i++) {
+                BigDecimalWrapper result = results.get(i);
+                if(!BigDecimalWrapper.ONE.equals(result) && !BigDecimalWrapper.ZERO.equals(result)) {
+                    throw new RuntimeException();
+                }
+            }
+
+            testResult.saveTo(test.testOutputFile);
         }
         if(predict != null){
             DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));

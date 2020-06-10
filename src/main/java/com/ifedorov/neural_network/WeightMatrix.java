@@ -20,7 +20,13 @@ public class WeightMatrix {
     }
 
     public List<BigDecimalWrapper> getWeightForNeuron(int neuronIndex) {
-        return Arrays.stream(matrix.getRow(neuronIndex)).map(BigReal::bigDecimalValue).map(BigDecimalWrapper::new).collect(Collectors.toList());
+        return Arrays.stream(matrix.getRow(neuronIndex)).map(BigReal::bigDecimalValue).map(bigDecimal -> {
+            if(bigDecimal == null) {
+                return null;
+            } else {
+                return new BigDecimalWrapper(bigDecimal);
+            }
+        }).collect(Collectors.toList());
     }
 
     public WeightMatrix transposed() {
@@ -44,7 +50,7 @@ public class WeightMatrix {
 
             @Override
             public BigReal visit(int row, int column, BigReal value) {
-                return new BigReal(visitor.visit(row, column, new BigDecimalWrapper(value.bigDecimalValue())).bigDecimal());
+                return new BigReal(value == null || value.bigDecimalValue() == null ? null : visitor.visit(row, column, new BigDecimalWrapper(value.bigDecimalValue())).bigDecimal());
             }
 
             @Override
@@ -55,7 +61,13 @@ public class WeightMatrix {
     }
 
     public List<BigDecimalWrapper> row(int num) {
-        return Arrays.stream(matrix.getRow(num)).map(BigReal::bigDecimalValue).map(BigDecimalWrapper::new).collect(Collectors.toList());
+        return Arrays.stream(matrix.getRow(num)).map(BigReal::bigDecimalValue).map(bigDecimal -> {
+            if(bigDecimal == null) {
+                return null;
+            } else {
+                return new BigDecimalWrapper(bigDecimal);
+            }
+        }).collect(Collectors.toList());
     }
 
     public Stream<List<BigDecimalWrapper>> rows() {

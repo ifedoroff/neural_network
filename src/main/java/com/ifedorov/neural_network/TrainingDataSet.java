@@ -7,10 +7,11 @@ import com.google.common.collect.Streams;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -108,5 +109,23 @@ public class TrainingDataSet {
             trainingDataSets.add(new TrainingDataSet(rowValues.subList(0, inputSize), rowValues.subList(inputSize, inputSize + outputSize)));
         }
         return trainingDataSets;
+    }
+
+    public static void saveTo(List<? extends TrainingDataSet> dataSets, File file) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()){
+            XSSFSheet sheet = workbook.createSheet();
+            for (int i = 0; i < dataSets.size(); i++) {
+                XSSFRow row = sheet.createRow(i);
+                TrainingDataSet dataSet = dataSets.get(i);
+                for (int j = 0; j < dataSet.input.size(); j++) {
+                    row.createCell(j).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
+                }
+            }
+            try (OutputStream os = new FileOutputStream(file)) {
+                workbook.write(os);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to save normalized weights to file", e);
+        }
     }
 }

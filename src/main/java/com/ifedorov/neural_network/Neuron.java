@@ -26,7 +26,14 @@ public class Neuron {
             throw new IllegalArgumentException("Number of inputs should match number of weights");
         }
         return IntStream.range(0, inputs.size())
-                .mapToObj(position -> weights.get(position).multiply(inputs.get(position)))
+                .mapToObj(position -> {
+                    BigDecimalWrapper weight = weights.get(position);
+                    if(weight == null) {
+                        return BigDecimalWrapper.ZERO;
+                    } else {
+                        return weight.multiply(inputs.get(position));
+                    }
+                })
                 .reduce(BigDecimalWrapper.ZERO, BigDecimalWrapper::add);
     }
 

@@ -33,24 +33,6 @@ public class NormalizedTrainingDataSet extends TrainingDataSet {
         }
     }
 
-    public static void saveTo(List<NormalizedTrainingDataSet> dataSets, File file) {
-        try (XSSFWorkbook workbook = new XSSFWorkbook()){
-            XSSFSheet sheet = workbook.createSheet();
-            for (int i = 0; i < dataSets.size(); i++) {
-                XSSFRow row = sheet.createRow(i);
-                NormalizedTrainingDataSet dataSet = dataSets.get(i);
-                for (int j = 0; j < dataSet.input.size(); j++) {
-                    row.createCell(j).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
-                }
-            }
-            try (OutputStream os = new FileOutputStream(file)) {
-                workbook.write(os);
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to save normalized weights to file", e);
-        }
-    }
-
     public static List<NormalizedTrainingDataSet> normalize(List<TrainingDataSet> trainingDataSets) {
         List<BigDecimalWrapper> maxValues = Lists.newArrayList(trainingDataSets.get(0).input);
         List<BigDecimalWrapper> minValues = Lists.newArrayList(trainingDataSets.get(0).input);
