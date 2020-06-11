@@ -1,5 +1,6 @@
 package com.ifedorov.neural_network;
 
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -26,10 +27,10 @@ public class TestResult {
                 XSSFRow row = sheet.createRow(i);
                 TrainingDataSet dataSet = trainingDataSets.get(i);
                 for (int j = 0; j < dataSet.input.size(); j++) {
-                    row.createCell(j).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
+                    row.createCell(j, CellType.NUMERIC).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
                 }
-                for (int j = 0; j < dataSet.output.size(); j++) {
-                    row.createCell(dataSet.input.size() + j).setCellValue(dataSet.output.get(j).bigDecimal().doubleValue());
+                for (int j = 0; j < dataSet.expectedOutput.size(); j++) {
+                    row.createCell(dataSet.input.size() + j, CellType.NUMERIC).setCellValue(dataSet.getActualOutput().get(j).bigDecimal().doubleValue());
                 }
             }
             try (OutputStream os = new FileOutputStream(file)) {

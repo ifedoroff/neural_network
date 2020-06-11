@@ -1,23 +1,15 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.collect.Lists;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class NormalizedTrainingDataSet extends TrainingDataSet {
 
     public NormalizedTrainingDataSet(TrainingDataSet trainingDataSet) {
-        this(trainingDataSet.input, trainingDataSet.output);
+        this(trainingDataSet.input, trainingDataSet.expectedOutput);
     }
     public NormalizedTrainingDataSet(List<BigDecimalWrapper> input, List<BigDecimalWrapper> output) {
         super(input, output);

@@ -66,11 +66,11 @@ public class Model {
     }
 
     public BigDecimalWrapper train(NormalizedTrainingDataSet trainingDataSet) {
-        if(trainingDataSet.output.size() != tiers.getLast().size())
+        if(trainingDataSet.expectedOutput.size() != tiers.getLast().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
         forwardPass(trainingDataSet.input);
-        backwardPass(trainingDataSet.output, trainingDataSet.input);
-        return calculateAccuracy(trainingDataSet.output);
+        backwardPass(trainingDataSet.expectedOutput, trainingDataSet.input);
+        return calculateAccuracy(trainingDataSet.expectedOutput);
     }
 
     public PredictionDataSet predict(PredictionDataSet dataSet) {
@@ -83,7 +83,7 @@ public class Model {
         BigDecimalWrapper accuracy = BigDecimalWrapper.ZERO;
         for (TrainingDataSet trainingDataSet : trainingDataSets) {
             this.forwardPass(trainingDataSet.input);
-            BigDecimalWrapper currentError = calculateAccuracy(trainingDataSet.output);
+            BigDecimalWrapper currentError = calculateAccuracy(trainingDataSet.expectedOutput);
             trainingDataSet.setAccuracy(currentError);
             trainingDataSet.setActualOutput(currentOutputValues());
             accuracy = accuracy.add(currentError);

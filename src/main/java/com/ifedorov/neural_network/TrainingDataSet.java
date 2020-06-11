@@ -1,9 +1,7 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.base.Verify;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Streams;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,19 +14,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class TrainingDataSet {
 
     public final List<BigDecimalWrapper> input;
-    public final List<BigDecimalWrapper> output;
+    public final List<BigDecimalWrapper> expectedOutput;
     private List<BigDecimalWrapper> actualOutput;
     private BigDecimalWrapper accuracy;
 
-    public TrainingDataSet(List<BigDecimalWrapper> input, List<BigDecimalWrapper> output) {
+    public TrainingDataSet(List<BigDecimalWrapper> input, List<BigDecimalWrapper> expectedOutput) {
         this.input = input;
-        this.output = output;
+        this.expectedOutput = expectedOutput;
     }
 
     public List<BigDecimalWrapper> getActualOutput() {

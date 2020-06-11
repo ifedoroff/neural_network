@@ -1,11 +1,18 @@
 package com.ifedorov.neural_network;
 
 import com.google.common.collect.Lists;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -14,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
+import static com.ifedorov.neural_network.QualityCalculator.*;
 
 public class Main {
 
@@ -48,11 +57,22 @@ public class Main {
             @CommandLine.Option(names = {"--trainingOutputFile" }, description = "Path to file with training data set", required = true)
             private File trainingOutputFile;
 
-            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = true)
+            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = false)
             private Double accuracy;
+
+            @CommandLine.Option(names = {"--trainingTestSetFile" }, description = "Path to file with test data set", required = true)
+            private File testSetFile;
+
+            @CommandLine.Option(names = {"--trainingTestOutputFile" }, description = "Path to file with test data set", required = true)
+            private File testOutputFile;
 
             @CommandLine.Option(names = {"--trainingEpochs" }, description = "Path to file with training data set", required = true)
             private int epochs;
+
+            @CommandLine.Option(names = {"--trainingEpochsBetweenTest" }, description = "Path to file with training data set", required = true)
+            private int epochsBetweenTest;
+            @CommandLine.Option(names = {"--statisticsFile" }, description = "Path to file with test data set", required = true)
+            private File statisticsFile;
         }
 
         static class Predict {
@@ -86,32 +106,63 @@ public class Main {
             List<TrainingDataSet> trainingDataSets = TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension());
             List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(trainingDataSets);
             NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, options.normalizedTrainingSetOutputFile);
-            TrainingResult result = model
-                    .train(
-                            normalizedTrainingSet,
-                            new BaseStopIndicator(train.epochs, Lists.newArrayList(), new BigDecimalWrapper(train.accuracy))
-                    );
-            System.out.println("accuracy: " + result.accuracy);
-            System.out.println("epochs: " + result.epochs);
-            model.printState();
-            model.saveTo(train.trainingOutputFile.toPath());
-        }
-        if(test != null) {
-            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
+            List<NormalizedTrainingDataSet> normalizedTestSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(train.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
+            try (XSSFWorkbook workbook = new XSSFWorkbook();
+                 OutputStream outputStream = new FileOutputStream(train.statisticsFile)){
+                XSSFSheet sheet = workbook.createSheet();
+                XSSFRow firstRow = sheet.createRow(0);
+                firstRow.createCell(0).setCellValue("epoch");
+                firstRow.createCell(1).setCellValue("accuracy");
+                firstRow.createCell(2).setCellValue("accuracy");
+                firstRow.createCell(3).setCellValue("adequacy");
+                firstRow.createCell(4).setCellValue("specificity");
+                firstRow.createCell(5).setCellValue("average");
+                BaseStopIndicator.Listener listener = new BaseStopIndicator.Listener() {
+
+                    @Override
+                    public void statistics(long epoch, BigDecimal accuracy, Quality calculatedQuality) {
+                        XSSFRow row = sheet.createRow((int) epoch + 1);
+                        row.createCell(0).setCellValue(epoch);
+                        row.createCell(1).setCellValue(accuracy.doubleValue());
+                        if(calculatedQuality != null) {
+                            row.createCell(2).setCellValue(calculatedQuality.accuracy.doubleValue());
+                            row.createCell(3).setCellValue(calculatedQuality.adequacy.doubleValue());
+                            row.createCell(4).setCellValue(calculatedQuality.specificity.doubleValue());
+                            row.createCell(5).setCellValue(calculatedQuality.average.doubleValue());
+                        }
+                    }
+                };
+                TrainingResult result = model
+                        .train(
+                                normalizedTrainingSet,
+                                new BaseStopIndicator(train.epochs, train.epochsBetweenTest, normalizedTestSet,
+                                        new Quality(BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95)),
+                                        listener)
+                        );
+                System.out.println("accuracy: " + result.accuracy);
+                System.out.println("epochs: " + result.epochs);
+                model.printState();
+                TestResult testResult = model.test(normalizedTestSet);
+                testResult.saveTo(train.testOutputFile);
+                List<BigDecimalWrapper> expectedOutputs = testResult.trainingDataSets.stream().map(testSet -> testSet.expectedOutput.get(0)).collect(Collectors.toList());
+                List<BigDecimalWrapper> actualOutputs = testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
+                System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
+                model.saveTo(train.trainingOutputFile.toPath());
+                workbook.write(outputStream);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        } else if(test != null) {
+            List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(test.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
             NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, options.normalizedTrainingSetOutputFile);
             TestResult testResult = model.test(normalizedTrainingSet);
-            List<BigDecimalWrapper> results = testResult.trainingDataSets.stream().map(o -> o.output.get(0))
-                    .collect(Collectors.toList());
-            for (int i = 0; i < results.size(); i++) {
-                BigDecimalWrapper result = results.get(i);
-                if(!BigDecimalWrapper.ONE.equals(result) && !BigDecimalWrapper.ZERO.equals(result)) {
-                    throw new RuntimeException();
-                }
-            }
+            System.out.println(testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList()));
 
             testResult.saveTo(test.testOutputFile);
-        }
-        if(predict != null){
+            List<BigDecimalWrapper> expectedOutputs = normalizedTrainingSet.stream().map(normalizedTrainingDataSet -> normalizedTrainingDataSet.expectedOutput.get(0)).collect(Collectors.toList());
+            List<BigDecimalWrapper> actualOutputs = testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
+            System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
+        } else if(predict != null){
             DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));
             List<String> outputLines =
                     readPredictionInput(predict.predictSetFile.toPath())
