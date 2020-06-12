@@ -66,9 +66,9 @@ public class QualityCalculator {
     }
 
     public static BigDecimal averageAdequacyAndAccuracy(BigDecimal truePositive, BigDecimal falsePositive, BigDecimal falseNegative) {
-        return BigDecimal.valueOf(2).multiply(truePositive, MathContext.DECIMAL32)
+        return new BigDecimal(2, MathContext.DECIMAL32).multiply(truePositive, MathContext.DECIMAL32)
                 .divide(
-                        BigDecimal.valueOf(2).multiply(truePositive, MathContext.DECIMAL32).add(falsePositive).add(falseNegative),
+                        new BigDecimal(2).multiply(truePositive, MathContext.DECIMAL32).add(falsePositive).add(falseNegative),
                         MathContext.DECIMAL32
                 );
     }
@@ -85,7 +85,7 @@ public class QualityCalculator {
                 }
             }
         }
-        return BigDecimal.valueOf((double)numberOfTruePositives / (double) expectedOutput.size());
+        return new BigDecimal((double)numberOfTruePositives / (double) expectedOutput.size(), MathContext.DECIMAL32);
     }
 
     public static BigDecimal falsePositive(List<BigDecimalWrapper> expectedOutput, List<BigDecimalWrapper> actualOutput) {
@@ -95,7 +95,7 @@ public class QualityCalculator {
                 numberOfFalsePositives++;
             }
         }
-        return BigDecimal.valueOf((double)numberOfFalsePositives / (double) expectedOutput.size());
+        return new BigDecimal((double)numberOfFalsePositives / (double) expectedOutput.size(), MathContext.DECIMAL32);
     }
 
     public static BigDecimal falseNegative(List<BigDecimalWrapper> expectedOutput, List<BigDecimalWrapper> actualOutput) {
@@ -105,7 +105,7 @@ public class QualityCalculator {
                 numberOfFalseNegatives++;
             }
         }
-        return BigDecimal.valueOf((double)numberOfFalseNegatives / (double) expectedOutput.size());
+        return new BigDecimal((double)numberOfFalseNegatives / (double) expectedOutput.size(), MathContext.DECIMAL32);
     }
 
     public static BigDecimal trueNegative(List<BigDecimalWrapper> expectedOutput, List<BigDecimalWrapper> actualOutput) {
@@ -116,13 +116,13 @@ public class QualityCalculator {
                 numberOfTrueNegatives++;
             }
         }
-        return BigDecimal.valueOf((double)numberOfTrueNegatives / (double) expectedOutput.size());
+        return new BigDecimal((double)numberOfTrueNegatives / (double) expectedOutput.size(), MathContext.DECIMAL32);
     }
 
     private static int round(BigDecimalWrapper decimal) {
         BigDecimal abs = decimal.bigDecimal().abs();
         if(abs.compareTo(BigDecimal.ONE.subtract(abs)) < 0) {
-            return -1;
+            return 0;
         } else {
             return 1;
         }

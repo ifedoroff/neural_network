@@ -64,7 +64,13 @@ public class TestModel {
 //      accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
 //      epoch++;
 //    }
-    model.train(trainingDataSets, new BaseStopIndicator(1000000, Lists.newArrayList(), new BigDecimalWrapper(0.0001)));
+    QualityCalculator.Quality quality = new QualityCalculator.Quality(new BigDecimal(0.95), new BigDecimal(0.95), new BigDecimal(0.95), new BigDecimal(0.95));
+    model.train(trainingDataSets, new BaseStopIndicator(1000000, 100000, trainingDataSets, quality, new BaseStopIndicator.Listener() {
+      @Override
+      public void statistics(long epoch, BigDecimal accuracy, QualityCalculator.Quality calculatedQuality) {
+
+      }
+    }));
     model.printState();
   }
 

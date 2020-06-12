@@ -53,6 +53,7 @@ public class Model {
         BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(BigDecimalWrapper.ONE);
         while(!stopIndicator.shouldStopTraining(this, epoch, accuracy)) {
             accuracy = BigDecimalWrapper.ZERO;
+
             for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
                 BigDecimalWrapper currentError = this.train(trainingDataSet);
                 trainingDataSet.setAccuracy(currentError);
