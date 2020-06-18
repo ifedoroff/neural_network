@@ -1,0 +1,114 @@
+﻿<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<title></title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="viewport" content="width=device-width, minimum-scale=1.0" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <link type="text/css" rel="stylesheet" href="./css/example.css" />
+
+    <script src="./lib/jquery.js"></script>
+    <script src="./lib/jquery-ui.js"></script>
+
+
+    <script src="draw2d.js"></script>
+
+    <script src="js/BaseTier.js"></script>
+    <script src="js/Tier.js"></script>
+    <script src="js/Tiers.js"></script>
+    <script src="js/Network.js"></script>
+    <script src="js/Neuron.js"></script>
+    <script src="js/NoDuplicateOutputPort.js"></script>
+    <script src="js/NoOutboundConnectionsInputPort.js"></script>
+    <script src="js/KeyboardPolicy.js"></script>
+    <script src="js/WeightedConnection.js"></script>
+    <script src="js/InputTier.js"></script>
+    <script src="js/InputNode.js"></script>
+<!--    <script src="CollapsibleJailhouse.js"></script>-->
+<!--    <script src="HeightSelectionFeedbackPolicy.js"></script>-->
+
+    <script src="js/document.js"></script>
+
+<script type="text/javascript">
+
+// just for debugging
+var canvas = null;
+var oval =null;
+var circle =null;
+var rect =null;
+
+// end debug variables
+
+document.addEventListener("DOMContentLoaded",function () {
+
+    // create the canvas for the user interaction
+    //
+    canvas = new draw2d.Canvas("gfx_holder");
+    canvas.editPolicy.remove(canvas.editPolicy.find(function(it) {
+        return it instanceof draw2d.policy.canvas.KeyboardPolicy
+    }));
+    canvas.installEditPolicy(new KeyboardPolicy());
+    canvas.installEditPolicy(  new draw2d.policy.connection.DragConnectionCreatePolicy({
+        createConnection: function(){
+            return new WeightedConnection();
+        }
+    }));
+    network = new Network();
+
+    network.addInputTier().addNeuron();
+    network.addNewTier().addNeuron();
+    network.addNewTier().addNeuron();
+  canvas.on('contextmenu', function(x, y) {
+  $.contextMenu({
+            selector: 'svg',
+            events:
+            {
+                hide:function(){ $.contextMenu( 'destroy' ); }
+            },
+            callback: function(key, options)
+            {
+               switch(key){
+               case "newTier":
+				  
+				  <!-- label.installEditor(new draw2d.ui.LabelInplaceEditor()); -->
+
+                   // canvas.add(newTier);
+                   network.addNewTier();
+                   break;
+               case "delete":
+                   // without undo/redo support
+              //     this.getCanvas().remove(this);
+
+                   // with undo/redo support
+                   var cmd = new draw2d.command.CommandDelete(this);
+                   this.getCanvas().getCommandStack().execute(cmd);
+               default:
+                   break;
+               }
+
+            }.bind(this),
+            x:x,
+            y:y,
+            items:
+            {
+                "newTier":    {name: 'Add Tier'}
+            }
+        });
+
+  });
+
+});
+
+</script>
+
+</head>
+
+<body>
+<div id="toolbar" class="header">
+    Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>  <button id="save">Save</button>
+</div>
+<div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:3000px; height:3000px; ">
+</div>
+
+</body>
+</html>

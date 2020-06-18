@@ -1,0 +1,14 @@
+body{
+  background: transparent url(background.png);
+  margin:0;
+}
+
+.cursor {
+  cursor:pointer;
+}
+
+.header {
+  padding: 10px
+}
+
+
