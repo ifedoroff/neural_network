@@ -58,6 +58,8 @@ public interface ActivationFn {
 
     BigDecimalWrapper derivative(BigDecimalWrapper input);
 
+    BigDecimalWrapper getAlfa();
+
     class Linear implements ActivationFn {
 
         private BigDecimalWrapper alfa;
@@ -73,6 +75,11 @@ public interface ActivationFn {
 
         @Override
         public BigDecimalWrapper derivative(BigDecimalWrapper fnResult) {
+            return alfa;
+        }
+
+        @Override
+        public BigDecimalWrapper getAlfa() {
             return alfa;
         }
 
@@ -110,6 +117,11 @@ public interface ActivationFn {
         }
 
         @Override
+        public BigDecimalWrapper getAlfa() {
+            return alfa;
+        }
+
+        @Override
         public String toString() {
             return String.format(Locale.US, "sig(%4.2f)", alfa.bigDecimal());
         }
@@ -143,6 +155,11 @@ public interface ActivationFn {
         }
 
         @Override
+        public BigDecimalWrapper getAlfa() {
+            return alfa;
+        }
+
+        @Override
         public String toString() {
             return String.format(Locale.US, "tan(%.2f)", alfa.bigDecimal());
         }
@@ -164,8 +181,13 @@ public interface ActivationFn {
         }
 
         @Override
+        public BigDecimalWrapper getAlfa() {
+            return BigDecimalWrapper.ZERO;
+        }
+
+        @Override
         public String toString() {
-            return "pseudo";
+            return "pseudo()";
         }
     }
 }

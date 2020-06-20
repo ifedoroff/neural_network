@@ -44,8 +44,16 @@ public class Model {
         return tiers.getLast().size();
     }
 
+    public BigDecimalWrapper getLearningFactor() {
+        return learningFactor;
+    }
+
     public List<WeightMatrix> weights() {
         return weightMatrices;
+    }
+
+    public WeightMatrix weightsForLevel(int level) {
+        return weightMatrices.get(level);
     }
 
     public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, StopIndicator stopIndicator) {
@@ -311,5 +319,48 @@ public class Model {
         return IntStream.range(0, outputTier.size())
                 .mapToObj(index -> outputTier.get(index).currentValue())
                 .collect(Collectors.toList());
+    }
+
+    public List<Neuron> tier(int index) {
+        return tiers.get(index);
+    }
+
+    public JsonModel toJsonModel() {
+        JsonModel jsonModel = new JsonModel();
+        jsonModel.setLearningFactor(learningFactor.bigDecimal().doubleValue());
+        jsonModel.setInputTierSize(getInputDimension());
+        List<JsonModel.Tier> jsonTiers = Lists.newArrayList();
+        for (int i = 0; i < tiers.size(); i++) {
+            List<Neuron> tier = tiers.get(i);
+            JsonModel.Tier jsonTier = new JsonModel.Tier();
+            jsonTier.setNeurons(tier.stream().map((neuron -> {
+                JsonModel.Neuron jsonNeuron = new JsonModel.Neuron();
+                if(neuron.getActivationFn().getClass() == ActivationFn.Pseudo.class) {
+                    jsonNeuron.setDummy(true);
+                } else {
+                    jsonNeuron.setActivationFn(neuron.getActivationFn().toString());
+                }
+                return jsonNeuron;
+            })).collect(Collectors.toList()));
+            WeightMatrix weightMatrix = weightsForLevel(i);
+            final List<JsonModel.Connection> connections = Lists.newArrayList();
+            weightMatrix.walk(new WeightMatrix.Visitor() {
+                @Override
+                public BigDecimalWrapper visit(int row, int column, BigDecimalWrapper value) {
+                    if(value != null) {
+                        JsonModel.Connection connection = new JsonModel.Connection();
+                        connection.setSource(row);
+                        connection.setTarget(column);
+                        connection.setWeight(value.bigDecimal().doubleValue());
+                        connections.add(connection);
+                    }
+                    return value;
+                }
+            });
+            jsonTier.setConnections(connections);
+            jsonTiers.add(jsonTier);
+        }
+        jsonModel.setTiers(jsonTiers);
+        return jsonModel;
     }
 }

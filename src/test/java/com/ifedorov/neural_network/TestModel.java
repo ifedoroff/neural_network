@@ -1,6 +1,5 @@
 package com.ifedorov.neural_network;
 
-import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -11,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 

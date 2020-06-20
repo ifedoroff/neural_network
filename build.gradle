@@ -18,6 +18,7 @@ dependencies {
     compile 'org.apache.poi:poi-ooxml:3.15'
     compile 'com.google.guava:guava:28.2-jre'
     compile 'info.picocli:picocli:4.2.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
     annotationProcessor 'info.picocli:picocli-codegen:4.2.0'
 }
 

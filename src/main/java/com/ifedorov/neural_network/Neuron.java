@@ -12,6 +12,10 @@ public class Neuron {
         this.activationFn = activationFn;
     }
 
+    public ActivationFn getActivationFn() {
+        return activationFn;
+    }
+
     public BigDecimalWrapper calculate(List<BigDecimalWrapper> inputs, List<BigDecimalWrapper> weights) {
         BigDecimalWrapper sumOfInputSignals = calculateSum(inputs, weights);
         return (cachedActivated = activationFn.calculate(sumOfInputSignals));

@@ -7,10 +7,22 @@ var Neuron = draw2d.shape.basic.Circle.extend({
         this._super($.extend({x:40,y:10, stroke:3, color:"#3d3d3d", bgColor:"yellow"},attr), setter, getter);
         this.position = attr.position;
         this.level = attr.level;
-        // this.dummy = false;
-        this.makeReal();
+        this.activationFn = attr.activationFn || "lin(0.5)";
+        this.dummy = attr.isDummy || false;
+        if(this.dummy) {
+            this.makeDummy();
+        } else {
+            this.makeReal();
+        }
+        this.installEditPolicy(new ShowWeightsSelectionPolicy());
         this.createPort("output", new draw2d.layout.locator.RightLocator());
         this.createPort("input", new draw2d.layout.locator.LeftLocator());
+    },
+
+    getSelectionAdapter: function() {
+        return function() {
+            return this;
+        }.bind(this);
     },
 
     createPort: function createPort(type, locator) {
@@ -43,6 +55,16 @@ var Neuron = draw2d.shape.basic.Circle.extend({
         return newPort;
     },
 
+    setLevel: function(level) {
+        this.level = level;
+        this.getInputPorts().each(function(i, port) {
+            port.setSemanticGroup('level' + level);
+        });
+        this.getOutputPorts().each(function(i, port) {
+            port.setSemanticGroup('level' + (level + 1));
+        });
+    },
+
     onContextMenu:function(x,y){
         $.contextMenu({
             selector: '.Neuron, .draw2d_shape_basic_Label',
@@ -62,6 +84,9 @@ var Neuron = draw2d.shape.basic.Circle.extend({
                     case "real":
                         this.makeReal();
                         break;
+                    case "showWeights":
+                        this.showInputWeight();
+                        break;
                     default:
                         break;
                 }
@@ -73,8 +98,15 @@ var Neuron = draw2d.shape.basic.Circle.extend({
                 {
                     "delete":  {name: "Delete"},
                     "dummy":  {name: "Dummy"},
-                    "real":  {name: "Real"}
+                    "real":  {name: "Real"},
+                    "showWeights": {name: "Show Weights"}
                 }
+        });
+    },
+
+    showInputWeight: function() {
+        this.getInputPorts().get(0).getConnections().each(function(i, connection) {
+            connection.select();
         });
     },
 
@@ -92,9 +124,9 @@ var Neuron = draw2d.shape.basic.Circle.extend({
         this.repaint();
     },
 
-    createLabel: function(fun) {
+    createLabel: function() {
         this.label = new draw2d.shape.basic.Label({
-            text:fun||"lin(0.5)",
+            text:this.activationFn||"lin(0.5)",
             fontColor:"#0d0d0d",
             stroke: 0
         });
@@ -105,6 +137,18 @@ var Neuron = draw2d.shape.basic.Circle.extend({
 
         this.label.installEditor(new draw2d.ui.LabelInplaceEditor());
         this.label.on('contextmenu', this.onContextMenu.bind(this));
+    },
+
+    isDummy: function() {
+        return this.dummy;
+    },
+
+    getActivationFn: function() {
+        if(this.isDummy()) {
+            return "";
+        } else {
+            return this.label.getText();
+        }
     },
 
     deleteLabel: function() {

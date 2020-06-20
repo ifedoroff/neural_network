@@ -20,9 +20,9 @@ var BaseTier = draw2d.shape.basic.Rectangle.extend({
         return "";
     },
 
-    addNeuron: function() {
+    addNeuron: function(activationFn, isDummy) {
         var position = this.getNextNeuronPosition();
-        var neuron = this.createNeuron(position);
+        var neuron = this.createNeuron(position,activationFn, isDummy);
         neuron.attr(this.calculateNeuronPosition(position, neuron));
         this.neurons.push(neuron);
         neuron.on('delete', this.deleteNeuron.bind(this, neuron));
@@ -31,8 +31,8 @@ var BaseTier = draw2d.shape.basic.Rectangle.extend({
         this.fireEvent('neuronAdded');
     },
 
-    createNeuron: function(position) {
-        return new Neuron({position: position, level: this.level})
+    createNeuron: function(position, activationFn, isDummy) {
+        return null;
     },
 
     calculateNeuronPosition: function(index, neuron) {
@@ -60,11 +60,14 @@ var BaseTier = draw2d.shape.basic.Rectangle.extend({
 
     getNextNeuronPosition: function() {
         return this.neurons.length;
-
     },
 
-    deleteNeuron: function(neuron) {
-        if(this.neurons.length > 1) {
+    getNeuron: function(position) {
+        return this.neurons[position];
+    },
+
+    deleteNeuron: function(neuron, force) {
+        if(this.neurons.length > 1 || force) {
             neuron.outputPorts.each(function(i, port) {
                 port.connections.each(function(j, conn) {
                     conn.disconnect();

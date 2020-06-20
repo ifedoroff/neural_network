@@ -23,11 +23,14 @@ var InputTier = BaseTier.extend({
             callback: function(key, options)
             {
                 switch(key){
-                    case "delete":
-                        this.fireEvent('delete');
-                        break;
                     case "addNeuron":
                         this.addNeuron();
+                        break;
+                    case "delete":
+                        this.neurons.forEach(function(neuron) {
+                            this.deleteNeuron(neuron, true);
+                        }, this);
+                        this.fireEvent('delete');
                         break;
                     default:
                         break;
@@ -42,5 +45,20 @@ var InputTier = BaseTier.extend({
                     "delete":  {name: "Delete"}
                 }
         });
+    },
+
+    validate: function() {
+        var message;
+        if( this.neurons.length === 0) {
+            message = this.label.getText() + " should have at least one neuron";
+        } else {
+            this.neurons.forEach(function (neuron) {
+                if (neuron.getOutputPorts().get(0).getConnections().getSize() === 0) {
+                    message = "Not all neurons of the Input Tier have outbound connections";
+                    return false;
+                }
+            });
+        }
+        return message;
     }
 });

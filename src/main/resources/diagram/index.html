@@ -24,6 +24,9 @@
     <script src="js/WeightedConnection.js"></script>
     <script src="js/InputTier.js"></script>
     <script src="js/InputNode.js"></script>
+    <script src="js/LeftEdgeLocator.js"></script>
+    <script src="js/ShowWeightSelectionPolicy.js"></script>
+    <script src="js/ShowWeightsSelectionPolicy.js"></script>
 <!--    <script src="CollapsibleJailhouse.js"></script>-->
 <!--    <script src="HeightSelectionFeedbackPolicy.js"></script>-->
 
@@ -55,9 +58,9 @@ document.addEventListener("DOMContentLoaded",function () {
     }));
     network = new Network();
 
-    network.addInputTier().addNeuron();
-    network.addNewTier().addNeuron();
-    network.addNewTier().addNeuron();
+    // network.addInputTier().addNeuron();
+    // network.addNewTier().addNeuron();
+    // network.addNewTier().addNeuron();
   canvas.on('contextmenu', function(x, y) {
   $.contextMenu({
             selector: 'svg',
@@ -75,6 +78,13 @@ document.addEventListener("DOMContentLoaded",function () {
                    // canvas.add(newTier);
                    network.addNewTier();
                    break;
+               case "inputTier":
+
+				  <!-- label.installEditor(new draw2d.ui.LabelInplaceEditor()); -->
+
+                   // canvas.add(newTier);
+                   network.addInputTier();
+                   break;
                case "delete":
                    // without undo/redo support
               //     this.getCanvas().remove(this);
@@ -91,21 +101,69 @@ document.addEventListener("DOMContentLoaded",function () {
             y:y,
             items:
             {
+                "inputTier":    {name: 'Add Input Tier'},
                 "newTier":    {name: 'Add Tier'}
             }
         });
 
   });
 
-});
+  $('#save').click(function() {
+      var tiers = network.getData();
+      if(tiers === undefined) {
+          return;
+      }
+      var model = $.extend(tiers, {
+          learningFactor: Number($("#learningFactor").val())
+      });
+      console.log(model);
+      download("model.json", JSON.stringify(model, null, '\t'));
+    });
+  $('#inputFile').change(function(event) {
+      const fileList = event.target.files;
+      readFile(fileList[0]);
+  });
 
+});
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+function readFile(file) {
+    // Check if the file is an image.
+
+    const reader = new FileReader();
+    reader.addEventListener('load', (event) => {
+        let model = JSON.parse(event.target.result);
+        $('#learningFactor').val(model.learningFactor);
+        network.read(model);
+    });
+    reader.readAsText(file);
+}
 </script>
 
 </head>
 
 <body>
+<iframe id="my_iframe" style="display:none;">
+
+</iframe>
 <div id="toolbar" class="header">
-    Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>  <button id="save">Save</button>
+    <div>
+        Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>  <button id="save">Save</button>
+    </div>
+    <div>
+        Load model from: <input type="file" name="inputFile" id="inputFile"/>
+    </div>
 </div>
 <div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:3000px; height:3000px; ">
 </div>

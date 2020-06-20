@@ -1,0 +1,101 @@
+{
+	"inputTierSize": 3,
+	"tiers": [
+		{
+			"neurons": [
+				{
+					"isDummy": true,
+					"activationFn": ""
+				},
+				{
+					"isDummy": true,
+					"activationFn": ""
+				},
+				{
+					"isDummy": false,
+					"activationFn": "sig(0.5)"
+				},
+				{
+					"isDummy": false,
+					"activationFn": "lin(0.3)"
+				},
+				{
+					"isDummy": false,
+					"activationFn": "tan(0.5)"
+				}
+			],
+			"connections": [
+				{
+					"source": 0,
+					"target": 0,
+					"weight": 0.75
+				},
+				{
+					"source": 1,
+					"target": 0,
+					"weight": 1
+				},
+				{
+					"source": 0,
+					"target": 1,
+					"weight": 0.15
+				},
+				{
+					"source": 0,
+					"target": 2,
+					"weight": 0.3
+				},
+				{
+					"source": 1,
+					"target": 3,
+					"weight": 0.5
+				},
+				{
+					"source": 2,
+					"target": 4,
+					"weight": 0.9
+				}
+			]
+		},
+		{
+			"neurons": [
+				{
+					"isDummy": false,
+					"activationFn": "lin(0.5)"
+				},
+				{
+					"isDummy": false,
+					"activationFn": "lin(0.5)"
+				}
+			],
+			"connections": [
+				{
+					"source": 0,
+					"target": 0,
+					"weight": 0.1
+				},
+				{
+					"source": 4,
+					"target": 0,
+					"weight": 1
+				},
+				{
+					"source": 1,
+					"target": 0,
+					"weight": 0.5
+				},
+				{
+					"source": 3,
+					"target": 1,
+					"weight": 1
+				},
+				{
+					"source": 2,
+					"target": 1,
+					"weight": 1
+				}
+			]
+		}
+	],
+	"learningFactor": 0.9
+}
