@@ -1,6 +1,7 @@
 package com.ifedorov.neural_network;
 
-import org.apache.commons.math3.fitting.AbstractCurveFitter;
+import com.ifedorov.neural_network.dataset.NormalizedTrainingDataSet;
+import com.ifedorov.neural_network.dataset.TrainingDataSet;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,9 +45,9 @@ public class BaseStopIndicator implements StopIndicator {
     }
 
     private QualityCalculator.Quality calculateQuality(Model model) {
-        List<? extends TrainingDataSet> testResult = model.test(testDataSet).trainingDataSets;
+        List<? extends TrainingDataSet> testResult = model.test(testDataSet).dataSets;
         List<BigDecimalWrapper> actualOutput = testResult.stream().map(TrainingDataSet::getActualOutput).map(list -> list.get(0)).collect(Collectors.toList());
-        List<BigDecimalWrapper> expectedOutput = testResult.stream().map(o -> o.expectedOutput).map(list -> list.get(0)).collect(Collectors.toList());
+        List<BigDecimalWrapper> expectedOutput = testResult.stream().map(o -> o.getOutputValues()).map(list -> list.get(0)).collect(Collectors.toList());
         return new QualityCalculator().calculateQuality(expectedOutput, actualOutput);
     }
 

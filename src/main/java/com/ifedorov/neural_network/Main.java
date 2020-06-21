@@ -1,7 +1,6 @@
 package com.ifedorov.neural_network;
 
-import com.google.common.collect.Lists;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import com.ifedorov.neural_network.dataset.*;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -9,15 +8,9 @@ import picocli.CommandLine;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static com.ifedorov.neural_network.QualityCalculator.*;
@@ -57,7 +50,7 @@ public class Main {
             private Type fromType;
             @CommandLine.Option(names = {"--convert-to-type" }, description = "The type of the input model file", required = true)
             private Type toType;
-            @CommandLine.Option(names = {"--converted-model" }, description = "Output model file", required = true)
+            @CommandLine.Option(names = {"--convert-result" }, description = "Output model file", required = true)
             private File outputFile;
         }
 
@@ -128,42 +121,48 @@ public class Main {
     }
 
     private static void predict(Options.Predict predict, Model model) {
-        DecimalFormat formatter = new DecimalFormat("###.###", DecimalFormatSymbols.getInstance(Locale.US));
-        List<String> outputLines =
-                readPredictionInput(predict.predictSetFile.toPath())
-                .stream()
-                .map(dataSet -> model
-                        .predict(dataSet)
-                        .getOutput()
-                        .stream()
-                        .map(BigDecimalWrapper::bigDecimal)
-                        .map(BigDecimal::doubleValue)
-                        .map(formatter::format))
-                .map(stringStream -> stringStream.reduce((s, s2) -> s + "," + s2).get())
-                .collect(Collectors.toList());
-        try {
-            Files.write(predict.predictOutputFile.toPath(), outputLines);
+        List<NormalizedPredictionDataSet> predictionDataSets = NormalizedPredictionDataSet.asNormalized(PredictionDataSet.loadFromXLSFile(predict.predictSetFile.toPath(), model.getInputDimension()));
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+            OutputStream os = new FileOutputStream(predict.predictOutputFile)) {
+            XSSFSheet sheet = workbook.createSheet();
+            for (int i = 0; i < predictionDataSets.size(); i++) {
+                PredictionDataSet result = model.predict(predictionDataSets.get(i));
+                XSSFRow row = sheet.createRow(i);
+                List<BigDecimalWrapper> inputs = result.getInputValues();
+                for (int j = 0; j < inputs.size(); j++) {
+                    row.createCell(j).setCellValue(inputs.get(j).bigDecimal().doubleValue());
+                }
+                List<BigDecimalWrapper> outputs = result.getOutput();
+                int shift = inputs.size();
+                for (int j = 0; j < outputs.size(); j++) {
+                    row.createCell(shift + j).setCellValue(outputs.get(j).bigDecimal().doubleValue());
+                }
+            }
+            workbook.write(os);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to save results");
+            throw new RuntimeException("Unable to write prediction results", e);
         }
     }
 
     private static void test(Options.Test test, Model model) {
-        List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(test.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
-        TestResult testResult = model.test(normalizedTrainingSet);
-        System.out.println(testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList()));
-
+        List<NormalizedTrainingDataSet> normalizedDataSet = NormalizedTrainingDataSet.asNormalized(
+                TrainingDataSet.loadFromXLSFile(test.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension())
+        );
+        TestResult testResult = model.test(normalizedDataSet);
         testResult.saveTo(test.testOutputFile);
-        List<BigDecimalWrapper> expectedOutputs = normalizedTrainingSet.stream().map(normalizedTrainingDataSet -> normalizedTrainingDataSet.expectedOutput.get(0)).collect(Collectors.toList());
-        List<BigDecimalWrapper> actualOutputs = testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
+        List<BigDecimalWrapper> expectedOutputs = normalizedDataSet.stream().map(dataSet -> dataSet.getOutputValues().get(0)).collect(Collectors.toList());
+        List<BigDecimalWrapper> actualOutputs = testResult.dataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
         System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
     }
 
     private static void train(Options.Training train, Model model) {
-        List<TrainingDataSet> trainingDataSets = TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension());
-        List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.normalize(trainingDataSets);
+        List<NormalizedTrainingDataSet> normalizedTrainingSet = NormalizedTrainingDataSet.asNormalized(
+                TrainingDataSet.loadFromXLSFile(train.trainingSetFile.toPath(), model.getInputDimension(), model.getOutputDimension())
+        );
         NormalizedTrainingDataSet.saveTo(normalizedTrainingSet, train.normalizedTrainingSetOutputFile);
-        List<NormalizedTrainingDataSet> normalizedTestSet = NormalizedTrainingDataSet.normalize(TrainingDataSet.loadFromXLSFile(train.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension()));
+        List<NormalizedTrainingDataSet> normalizedTestSet = NormalizedTrainingDataSet.asNormalized(
+                TrainingDataSet.loadFromXLSFile(train.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension())
+        );
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              OutputStream outputStream = new FileOutputStream(train.statisticsFile)){
             XSSFSheet sheet = workbook.createSheet();
@@ -201,8 +200,8 @@ public class Main {
             model.printState();
             TestResult testResult = model.test(normalizedTestSet);
             testResult.saveTo(train.testOutputFile);
-            List<BigDecimalWrapper> expectedOutputs = testResult.trainingDataSets.stream().map(testSet -> testSet.expectedOutput.get(0)).collect(Collectors.toList());
-            List<BigDecimalWrapper> actualOutputs = testResult.trainingDataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
+            List<BigDecimalWrapper> expectedOutputs = testResult.dataSets.stream().map(testSet -> testSet.getOutputValues().get(0)).collect(Collectors.toList());
+            List<BigDecimalWrapper> actualOutputs = testResult.dataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
             System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
             model.saveTo(train.trainingOutputFile.toPath());
             workbook.write(outputStream);
@@ -217,19 +216,5 @@ public class Main {
             } else {
                 Files.write(convert.outputFile.toPath(), Model.load(modelInputFile.toPath()).toJsonModel().toJson().getBytes(StandardCharsets.UTF_8));
             }
-    }
-
-    private static List<PredictionDataSet> readPredictionInput(Path file) {
-        try {
-            return Files.readAllLines(file).stream()
-                    .map(line -> {
-                        return new PredictionDataSet(Arrays.stream(line.split(","))
-                                .map(Double::valueOf)
-                                .map(BigDecimalWrapper::new)
-                                .collect(Collectors.toList()));
-                    }).collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read input values from " + file);
-        }
     }
 }

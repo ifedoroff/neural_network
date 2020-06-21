@@ -1,5 +1,6 @@
 package com.ifedorov.neural_network;
 
+import com.ifedorov.neural_network.dataset.NormalizedTrainingDataSet;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

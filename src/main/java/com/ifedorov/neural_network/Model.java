@@ -1,8 +1,11 @@
 package com.ifedorov.neural_network;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.ifedorov.neural_network.dataset.*;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -75,15 +78,15 @@ public class Model {
     }
 
     public BigDecimalWrapper train(NormalizedTrainingDataSet trainingDataSet) {
-        if(trainingDataSet.expectedOutput.size() != tiers.getLast().size())
+        if(trainingDataSet.getOutputValues().size() != tiers.getLast().size())
             throw new IllegalArgumentException("Number of input values should be equals to the number of Neurons of the first level");
-        forwardPass(trainingDataSet.input);
-        backwardPass(trainingDataSet.expectedOutput, trainingDataSet.input);
-        return calculateAccuracy(trainingDataSet.expectedOutput);
+        forwardPass(trainingDataSet.getInputValues());
+        backwardPass(trainingDataSet.getOutputValues(), trainingDataSet.getInputValues());
+        return calculateAccuracy(trainingDataSet.getOutputValues());
     }
 
-    public PredictionDataSet predict(PredictionDataSet dataSet) {
-        forwardPass(dataSet.input);
+    public PredictionDataSet predict(NormalizedPredictionDataSet dataSet) {
+        forwardPass(dataSet.getInputValues());
         dataSet.setOutput(tiers.getLast().stream().map(Neuron::currentValue).collect(Collectors.toList()));
         return dataSet;
     }
@@ -91,8 +94,8 @@ public class Model {
     public TestResult test(List<NormalizedTrainingDataSet> trainingDataSets) {
         BigDecimalWrapper accuracy = BigDecimalWrapper.ZERO;
         for (TrainingDataSet trainingDataSet : trainingDataSets) {
-            this.forwardPass(trainingDataSet.input);
-            BigDecimalWrapper currentError = calculateAccuracy(trainingDataSet.expectedOutput);
+            this.forwardPass(trainingDataSet.getInputValues());
+            BigDecimalWrapper currentError = calculateAccuracy(trainingDataSet.getOutputValues());
             trainingDataSet.setAccuracy(currentError);
             trainingDataSet.setActualOutput(currentOutputValues());
             accuracy = accuracy.add(currentError);
@@ -108,8 +111,8 @@ public class Model {
                 .reduce(BigDecimalWrapper::add).get();
     }
 
-    private void backwardPass(List<BigDecimalWrapper> expectedOutput, List<BigDecimalWrapper> inputs) {
-        adjustWeights(calculateErrors(expectedOutput), inputs);
+    private void backwardPass(List<BigDecimalWrapper> expectedOutputs, List<BigDecimalWrapper> inputs) {
+        adjustWeights(calculateErrors(expectedOutputs), inputs);
     }
 
     private void adjustWeights(List<List<BigDecimalWrapper>> errors, List<BigDecimalWrapper> inputs) {
@@ -140,10 +143,10 @@ public class Model {
         });
     }
 
-    private List<List<BigDecimalWrapper>> calculateErrors(List<BigDecimalWrapper> expectedOutput) {
+    private List<List<BigDecimalWrapper>> calculateErrors(List<BigDecimalWrapper> expectedOutputs) {
         int tierNumber = tiers.size();
         LinkedList<List<BigDecimalWrapper>> errors = new LinkedList<>();
-        List<BigDecimalWrapper> upperLevelError = calculateErrorForOutputTier(expectedOutput);
+        List<BigDecimalWrapper> upperLevelError = calculateErrorForOutputTier(expectedOutputs);
         errors.push(upperLevelError);
         for (int i = tierNumber - 2; i >= 0; i--) {
             List<Neuron> currentTier = tiers.get(i);
@@ -172,13 +175,13 @@ public class Model {
         return errors;
     }
 
-    private List<BigDecimalWrapper> calculateErrorForOutputTier(List<BigDecimalWrapper> expectedOutput) {
+    private List<BigDecimalWrapper> calculateErrorForOutputTier(List<BigDecimalWrapper> expectedOutputs) {
         List<Neuron> outputTier = tiers.getLast();
-        return IntStream.range(0, expectedOutput.size())
+        return IntStream.range(0, expectedOutputs.size())
                 .mapToObj(index -> {
                     Neuron neuron = outputTier.get(index);
                     BigDecimalWrapper actualValue = neuron.currentValue();
-                    BigDecimalWrapper expectedValue = expectedOutput.get(index);
+                    BigDecimalWrapper expectedValue = expectedOutputs.get(index);
                     return expectedValue.subtract(actualValue).multiply(neuron.derivative());
                 }).collect(Collectors.toList());
     }
@@ -264,7 +267,16 @@ public class Model {
                 if(cell == null) {
                     cellValue = null;
                 } else {
-                    cellValue = BigDecimal.valueOf(Double.valueOf(cell.getNumericCellValue()));
+                    if(CellType.NUMERIC.getCode() == cell.getCellType()) {
+                        cellValue = BigDecimal.valueOf(Double.valueOf(cell.getNumericCellValue()));
+                    } else {
+                        String value = cell.getStringCellValue();
+                        if(Strings.isNullOrEmpty(value)) {
+                            cellValue = null;
+                        } else {
+                            cellValue = BigDecimal.valueOf(Double.valueOf(value));
+                        }
+                    }
                 }
                 weights.add(cellValue);
             }

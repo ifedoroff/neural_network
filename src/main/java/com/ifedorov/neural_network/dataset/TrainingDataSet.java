@@ -1,8 +1,10 @@
-package com.ifedorov.neural_network;
+package com.ifedorov.neural_network.dataset;
 
-import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
+import com.ifedorov.neural_network.BigDecimalWrapper;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -14,12 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.stream.IntStream;
 
-public class TrainingDataSet {
+public class TrainingDataSet implements NetworkInput, NetworkOutput{
 
-    public final List<BigDecimalWrapper> input;
-    public final List<BigDecimalWrapper> expectedOutput;
+    private final List<BigDecimalWrapper> input;
+    private final List<BigDecimalWrapper> expectedOutput;
     private List<BigDecimalWrapper> actualOutput;
     private BigDecimalWrapper accuracy;
 
@@ -82,7 +84,7 @@ public class TrainingDataSet {
     public static List<TrainingDataSet> loadFromXLSFile(Path path, int inputSize, int outputSize) {
 
         try {
-            try(XSSFWorkbook workbook = new XSSFWorkbook(path.toFile())) {
+            try(XSSFWorkbook workbook = new XSSFWorkbook(OPCPackage.open(path.toFile(), PackageAccess.READ))) {
                 return loadFromXLSFile(workbook, inputSize, outputSize);
             }
 
@@ -97,13 +99,13 @@ public class TrainingDataSet {
         Iterator<Row> rowIterator = sheet.rowIterator();
         while (rowIterator.hasNext()) {
             Row row = rowIterator.next();
-            List<BigDecimalWrapper> rowValues = StreamSupport.stream(
-                    Spliterators.spliteratorUnknownSize(row.cellIterator(), 0),
-                    false
-            ).map(cell -> new BigDecimalWrapper(cell.getNumericCellValue()))
+            List<BigDecimalWrapper> inputValues =
+                    IntStream.range(0, inputSize).mapToObj(i -> new BigDecimalWrapper(row.getCell(i).getNumericCellValue()))
                     .collect(Collectors.toList());
-            Verify.verify(inputSize + outputSize == rowValues.size(), "Incorrect number of parameters at row: " + row.getRowNum());
-            trainingDataSets.add(new TrainingDataSet(rowValues.subList(0, inputSize), rowValues.subList(inputSize, inputSize + outputSize)));
+            List<BigDecimalWrapper> outputValues =
+                    IntStream.range(inputSize, inputSize + outputSize).mapToObj(i -> new BigDecimalWrapper(row.getCell(i).getNumericCellValue()))
+                            .collect(Collectors.toList());
+            trainingDataSets.add(new TrainingDataSet(inputValues, outputValues));
         }
         return trainingDataSets;
     }
@@ -124,5 +126,15 @@ public class TrainingDataSet {
         } catch (IOException e) {
             throw new IllegalStateException("Unable to save normalized weights to file", e);
         }
+    }
+
+    @Override
+    public List<BigDecimalWrapper> getInputValues() {
+        return input;
+    }
+
+    @Override
+    public List<BigDecimalWrapper> getOutputValues() {
+        return expectedOutput;
     }
 }

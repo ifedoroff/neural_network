@@ -1,5 +1,6 @@
-package com.ifedorov.neural_network;
+package com.ifedorov.neural_network.dataset;
 
+import com.ifedorov.neural_network.BigDecimalWrapper;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -13,24 +14,24 @@ import java.util.List;
 
 public class TestResult {
     public final BigDecimalWrapper accuracy;
-    public List<? extends TrainingDataSet> trainingDataSets;
+    public List<? extends TrainingDataSet> dataSets;
 
     public TestResult(BigDecimalWrapper accuracy, List<? extends TrainingDataSet> trainingTrainingDataSets) {
         this.accuracy = accuracy;
-        this.trainingDataSets = trainingTrainingDataSets;
+        this.dataSets = trainingTrainingDataSets;
     }
 
     public void saveTo(File file) {
         try (XSSFWorkbook workbook = new XSSFWorkbook()){
             XSSFSheet sheet = workbook.createSheet();
-            for (int i = 0; i < trainingDataSets.size(); i++) {
+            for (int i = 0; i < dataSets.size(); i++) {
                 XSSFRow row = sheet.createRow(i);
-                TrainingDataSet dataSet = trainingDataSets.get(i);
-                for (int j = 0; j < dataSet.input.size(); j++) {
-                    row.createCell(j, CellType.NUMERIC).setCellValue(dataSet.input.get(j).bigDecimal().doubleValue());
+                TrainingDataSet dataSet = dataSets.get(i);
+                for (int j = 0; j < dataSet.getInputValues().size(); j++) {
+                    row.createCell(j, CellType.NUMERIC).setCellValue(dataSet.getInputValues().get(j).bigDecimal().doubleValue());
                 }
-                for (int j = 0; j < dataSet.expectedOutput.size(); j++) {
-                    row.createCell(dataSet.input.size() + j, CellType.NUMERIC).setCellValue(dataSet.getActualOutput().get(j).bigDecimal().doubleValue());
+                for (int j = 0; j < dataSet.getOutputValues().size(); j++) {
+                    row.createCell(dataSet.getInputValues().size() + j, CellType.NUMERIC).setCellValue(dataSet.getActualOutput().get(j).bigDecimal().doubleValue());
                 }
             }
             try (OutputStream os = new FileOutputStream(file)) {
