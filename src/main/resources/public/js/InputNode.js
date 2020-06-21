@@ -13,7 +13,6 @@ var InputNode = draw2d.shape.basic.Circle.extend({
         var count = 0;
         newPort = new NoDuplicateOutputPort();
         newPort.setSemanticGroup('level1');
-        console.log(newPort.getSemanticGroup());
         count = this.outputPorts.getSize();
 
         newPort.setName("output" + count);

@@ -33,13 +33,11 @@ var Neuron = draw2d.shape.basic.Circle.extend({
             case "input":
                 newPort = new NoOutboundConnectionsInputPort();
                 newPort.setSemanticGroup('level' + (this.level));
-                console.log(newPort.getSemanticGroup());
                 count = this.inputPorts.getSize();
                 break;
             case "output":
                 newPort = new NoDuplicateOutputPort();
                 newPort.setSemanticGroup('level' + (this.level + 1));
-                console.log(newPort.getSemanticGroup());
                 count = this.outputPorts.getSize();
                 break;
             default:

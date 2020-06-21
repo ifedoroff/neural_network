@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, minimum-scale=1.0" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <link type="text/css" rel="stylesheet" href="./css/example.css" />
+    <link type="text/css" rel="stylesheet" href="css/example.css" />
+<!--    <link type="text/css" rel="stylesheet" href="css/uploadfile.css" />-->
 
-    <script src="./lib/jquery.js"></script>
-    <script src="./lib/jquery-ui.js"></script>
+    <script src="lib/jquery.js"></script>
+    <script src="lib/jquery-ui.js"></script>
+<!--    <script src="lib/jquery.uploadfile.min.js"></script>-->
 
 
     <script src="draw2d.js"></script>
@@ -58,9 +60,6 @@ document.addEventListener("DOMContentLoaded",function () {
     }));
     network = new Network();
 
-    // network.addInputTier().addNeuron();
-    // network.addNewTier().addNeuron();
-    // network.addNewTier().addNeuron();
   canvas.on('contextmenu', function(x, y) {
   $.contextMenu({
             selector: 'svg',
@@ -73,16 +72,10 @@ document.addEventListener("DOMContentLoaded",function () {
                switch(key){
                case "newTier":
 				  
-				  <!-- label.installEditor(new draw2d.ui.LabelInplaceEditor()); -->
-
-                   // canvas.add(newTier);
                    network.addNewTier();
                    break;
                case "inputTier":
 
-				  <!-- label.installEditor(new draw2d.ui.LabelInplaceEditor()); -->
-
-                   // canvas.add(newTier);
                    network.addInputTier();
                    break;
                case "delete":
@@ -119,15 +112,66 @@ document.addEventListener("DOMContentLoaded",function () {
       console.log(model);
       download("model.json", JSON.stringify(model, null, '\t'));
     });
-  $('#inputFile').change(function(event) {
-      const fileList = event.target.files;
-      readFile(fileList[0]);
-  });
+    $("#loadButton").click(function(event) {
+        var file = $('#inputFile')[0].files[0];
+        if(file.name.endsWith('.json')) {
+            readFile(file);
+        } else {
+            var fd = new FormData();
+            fd.append('file', file);
+
+            $.ajax({
+                url: '/fromXlsx',
+                type: 'post',
+                data: fd,
+                contentType: false,
+                processData: false,
+                success: function(response){
+                    renderModel(response);
+                },
+            });
+        }
+    });
+
+    $("#uploadButton").click(function(event) {
+        var tiers = network.getData();
+        if(tiers === undefined) {
+            return;
+        }
+        var model = $.extend(tiers, {
+            learningFactor: Number($("#learningFactor").val())
+        });
+        var file = new Blob([JSON.stringify(model, null, '\t')], { type: 'text/plain' });
+        var fd = new FormData();
+        fd.append('file', file);
+
+        var oReq = new XMLHttpRequest();
+        oReq.open("POST", "/toXlsx", true);
+        oReq.responseType = "arraybuffer";
+
+        oReq.onload = function(oEvent) {
+            var arrayBuffer = oReq.response;
+
+            // if you want to access the bytes:
+            var byteArray = new Uint8Array(arrayBuffer);
+            downloadXlsx("model.xlsx", byteArray)
+
+        };
+
+        oReq.send(fd);
+
+    })
 
 });
+
+function downloadXlsx(filename, bytes) {
+    var blob = new Blob([bytes], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    var objectUrl = URL.createObjectURL(blob);
+    window.open(objectUrl);
+}
 function download(filename, text) {
     var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + text);
     element.setAttribute('download', filename);
 
     element.style.display = 'none';
@@ -143,12 +187,17 @@ function readFile(file) {
 
     const reader = new FileReader();
     reader.addEventListener('load', (event) => {
-        let model = JSON.parse(event.target.result);
-        $('#learningFactor').val(model.learningFactor);
-        network.read(model);
+        renderModel(event.target.result);
     });
     reader.readAsText(file);
 }
+
+function renderModel(string) {
+    let model = JSON.parse(string);
+    $('#learningFactor').val(model.learningFactor);
+    network.read(model);
+}
+
 </script>
 
 </head>
@@ -159,10 +208,21 @@ function readFile(file) {
 </iframe>
 <div id="toolbar" class="header">
     <div>
-        Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>  <button id="save">Save</button>
+        <input type="file" name="inputFile" id="inputFile"/>
+        <input type="button" name="loadButton" id="loadButton" value="Load Model"/>
+        <form method="post" action="" enctype="multipart/form-data"
+              id="myform">
+
+            <div >
+<!--                <input type="file" id="uploadFile" name="file" />-->
+                <input type="button" value="Save Model"
+                       id="uploadButton">
+            </div>
+        </form>
     </div>
+
     <div>
-        Load model from: <input type="file" name="inputFile" id="inputFile"/>
+        Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>
     </div>
 </div>
 <div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:3000px; height:3000px; ">

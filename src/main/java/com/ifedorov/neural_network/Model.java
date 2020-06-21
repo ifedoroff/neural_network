@@ -13,10 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
@@ -287,6 +284,14 @@ public class Model {
     }
 
     public void saveTo(Path path) {
+        try (OutputStream os = new FileOutputStream(path.toFile())){
+            saveTo(os);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to save model to file", e);
+        }
+    }
+
+    public void saveTo(OutputStream outputStream) {
         try(XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFSheet firstSheet = workbook.createSheet("Learning Factor");
             firstSheet
@@ -318,13 +323,13 @@ public class Model {
                             });
                         });
             }
-            try (OutputStream os = new FileOutputStream(path.toFile())){
-                workbook.write(os);
-            }
+            workbook.write(outputStream);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+
 
     public List<BigDecimalWrapper> currentOutputValues() {
         List<Neuron> outputTier = tiers.getLast();
