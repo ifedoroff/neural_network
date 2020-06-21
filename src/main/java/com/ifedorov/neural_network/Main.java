@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 import static com.ifedorov.neural_network.QualityCalculator.*;
@@ -24,7 +25,7 @@ public class Main {
         @CommandLine.Option(names = {"--model" }, required = true, description = "Path to file with Neural Network weights/neurons configuration")
         private File modelInputFile;
 
-        @CommandLine.ArgGroup(exclusive = false, validate = true)
+        @CommandLine.ArgGroup(exclusive = true, validate = true)
         private Mode executionMode;
 
         static class Mode {
@@ -50,11 +51,13 @@ public class Main {
             private Type fromType;
             @CommandLine.Option(names = {"--convert-to-type" }, description = "The type of the input model file", required = true)
             private Type toType;
-            @CommandLine.Option(names = {"--convert-result" }, description = "Output model file", required = true)
+            @CommandLine.Option(names = {"--convert-result-file" }, description = "Output model file", required = true)
             private File outputFile;
         }
 
         static class Training {
+
+
             @CommandLine.Option(names = {"--trainSetFile" }, description = "Path to file with training data set", required = true)
             private File trainingSetFile;
 
@@ -102,10 +105,16 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         Options options = new Options();
-        new CommandLine(options).parseArgs(args);
-        if(options.executionMode == null) {
-            throw new RuntimeException("Please specify one of the execution modes");
+        CommandLine cmd = new CommandLine(options);
+        cmd.setResourceBundle(ResourceBundle.getBundle("Messages"));
+        cmd.parseArgs(args);
+        if(cmd.isUsageHelpRequested()) {
+            cmd.usage(System.out);
+            return;
         }
+//        if(options.executionMode == null) {
+//            throw new RuntimeException("Please specify one of the execution modes");
+//        }
         Options.Training train = options.executionMode.training;
         Options.Predict predict = options.executionMode.predict;
         Options.Test test = options.executionMode.test;
