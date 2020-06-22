@@ -8,6 +8,7 @@ var Tiers = draw2d.shape.layout.HorizontalLayout.extend({
         // this.inputTier.addInputNode();
         this.setGap(400);
         var _this = this;
+        this.renderBlocked = false;
         this.locator.relocate = function relocate(index, target) {
             var stroke = _this.getStroke();
             var yPos = stroke + _this.padding.top + (_this.getHeight() - target.getHeight()) / 2;
@@ -67,21 +68,17 @@ var Tiers = draw2d.shape.layout.HorizontalLayout.extend({
         this.inputTier.repaint();
     },
 
-    relayoutChildren: function() {
-
-    },
-
     deleteTier: function(tier) {
         this.tiers.remove(tier);
         var tiers = this.tiers;
         this.remove(tier);
         this.tiers.each(function(i, tier) {
-            tier.setOutputTier(i === tiers.getSize());
+            tier.setOutputTier(i + 1 === tiers.getSize());
             tier.setLevel(i + 1);
         });
         this.repaint();
-        // var cmd = new draw2d.command.CommandDelete(tier);
-        // canvas.getCommandStack().execute(cmd);
+        var cmd = new draw2d.command.CommandDelete(tier);
+        canvas.getCommandStack().execute(cmd);
     },
 
     deleteInputTier: function(tier) {
@@ -100,9 +97,9 @@ var Tiers = draw2d.shape.layout.HorizontalLayout.extend({
     validate: function() {
         var message;
         if(this.inputTier === undefined) {
-            message = "Input Tier is required";
+            message = "Добавьте входной слой";
         } else if(this.tiers.getSize() < 2) {
-            message = "At least one hidden Tier and one output Tier required";
+            message = "Необходимо добавить хотя бы один скрытый и один выходной слой";
         } else {
             message = this.inputTier.validate();
             if(message === undefined) {

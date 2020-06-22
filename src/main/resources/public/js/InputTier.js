@@ -27,9 +27,10 @@ var InputTier = BaseTier.extend({
                         this.addNeuron();
                         break;
                     case "delete":
-                        this.neurons.forEach(function(neuron) {
-                            this.deleteNeuron(neuron, true);
-                        }, this);
+                        var neuronsLength = this.neurons.length;
+                        for (let i = 0; i < neuronsLength; i++) {
+                            this.deleteNeuron(this.neurons[0], true, false);
+                        }
                         this.fireEvent('delete');
                         break;
                     default:
@@ -50,11 +51,11 @@ var InputTier = BaseTier.extend({
     validate: function() {
         var message;
         if( this.neurons.length === 0) {
-            message = this.label.getText() + " should have at least one neuron";
+            message = "Входной слой должен иметь хотя бы один нейрон";
         } else {
             this.neurons.forEach(function (neuron) {
                 if (neuron.getOutputPorts().get(0).getConnections().getSize() === 0) {
-                    message = "Not all neurons of the Input Tier have outbound connections";
+                    message = "Не все нейроны входного слоя имеют выходные веса";
                     return false;
                 }
             });

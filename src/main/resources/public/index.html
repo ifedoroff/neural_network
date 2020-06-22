@@ -29,10 +29,6 @@
     <script src="js/LeftEdgeLocator.js"></script>
     <script src="js/ShowWeightSelectionPolicy.js"></script>
     <script src="js/ShowWeightsSelectionPolicy.js"></script>
-<!--    <script src="CollapsibleJailhouse.js"></script>-->
-<!--    <script src="HeightSelectionFeedbackPolicy.js"></script>-->
-
-    <script src="js/document.js"></script>
 
 <script type="text/javascript">
 
@@ -101,18 +97,9 @@ document.addEventListener("DOMContentLoaded",function () {
 
   });
 
-  $('#save').click(function() {
-      var tiers = network.getData();
-      if(tiers === undefined) {
-          return;
-      }
-      var model = $.extend(tiers, {
-          learningFactor: Number($("#learningFactor").val())
-      });
-      console.log(model);
-      download("model.json", JSON.stringify(model, null, '\t'));
-    });
     $("#inputFile").change(function(event) {
+        canvas.clear();
+        window.network = new Network();
         var file = $('#inputFile')[0].files[0];
         if(file.name.endsWith('.json')) {
             readFile(file);
@@ -135,6 +122,11 @@ document.addEventListener("DOMContentLoaded",function () {
 
     $("#uploadButton").click(function(event) {
         var tiers = network.getData();
+        var learningFactor = Number($("#learningFactor").val());
+        if(!learningFactor) {
+            alert("Укажите скорость обучения");
+            return;
+        }
         if(tiers === undefined) {
             return;
         }
@@ -196,6 +188,7 @@ function renderModel(string) {
     let model = JSON.parse(string);
     $('#learningFactor').val(model.learningFactor);
     network.read(model);
+    $('#inputFile').val('');
 }
 
 </script>
@@ -208,21 +201,21 @@ function renderModel(string) {
 </iframe>
 <div id="toolbar" class="header">
     <div>
-        <input type="file" name="inputFile" id="inputFile" value="Load Model" style="display:none">
-        <input type="button" name="loadButton" id="loadButton" value="Load Model" onclick="inputFile.click()"/>
+        <input type="file" name="inputFile" id="inputFile" style="display:none">
+        <input type="button" name="loadButton" id="loadButton" value="Загрузить модель" onclick="inputFile.click()"/>
         <form method="post" action="" enctype="multipart/form-data"
               id="myform">
 
             <div >
 <!--                <input type="file" id="uploadFile" name="file" />-->
-                <input type="button" value="Save Model"
+                <input type="button" value="Сохранить модель"
                        id="uploadButton">
             </div>
         </form>
     </div>
 
     <div>
-        Learning factor: <input type="number" name="learningFactor" id="learningFactor"/>
+        Скорость обучения: <input type="number" name="learningFactor" id="learningFactor"/>
     </div>
 </div>
 <div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:3000px; height:3000px; ">

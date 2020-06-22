@@ -150,8 +150,10 @@ var Neuron = draw2d.shape.basic.Circle.extend({
     },
 
     deleteLabel: function() {
-        this.remove(this.label);
-        this.label = undefined;
+        if(this.label !== undefined) {
+            this.remove(this.label);
+            this.label = undefined;
+        }
     },
 
     repaint: function(attrs) {
@@ -160,6 +162,21 @@ var Neuron = draw2d.shape.basic.Circle.extend({
         if(this.label) {
             this.label.repaint();
         }
-    }
+    },
+
+    getAllConnection: function() {
+        var connections = [];
+        this.outputPorts.each(function(i, port) {
+            port.connections.each(function(j, conn) {
+                connections.push(conn);
+            });
+        });
+        this.inputPorts.each(function(i, port) {
+            port.connections.each(function(j, conn) {
+                connections.push(conn);
+            });
+        });
+        return connections;
+    },
 
 });
