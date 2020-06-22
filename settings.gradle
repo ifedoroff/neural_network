@@ -1,2 +1,4 @@
 rootProject.name = 'neural_network'
+include 'train'
+include 'web'
 

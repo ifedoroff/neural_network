@@ -6,8 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath(
-                "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 
@@ -19,42 +18,24 @@ version '1.0'
 
 sourceCompatibility = 1.8
 
+
+configurations {
+    train
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter:5.6.2')
-    compile 'org.apache.commons:commons-math3:3.6.1'
-    compile 'org.apache.poi:poi:3.15'
-    compile 'org.apache.poi:poi-ooxml:3.15'
-    compile 'com.google.guava:guava:28.2-jre'
-    compile 'info.picocli:picocli:4.2.0'
-    compile 'com.google.code.gson:gson:2.8.6'
     compile("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
-    annotationProcessor 'info.picocli:picocli-codegen:4.2.0'
+    train project(':train')
+    compile project(':train')
 }
 
-compileJava {
-    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
-}
-
-jar {
-    manifest {
-        attributes "Main-Class": "com.ifedorov.neural_network.Main"
-    }
-
-    from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-}
-
-springBoot {
-    mainClassName = 'com.ifedorov.neural_network.WebApplication'
-}
 
 bootJar {
-    mainClassName = 'com.ifedorov.neural_network.WebApplication'
     archiveBaseName = 'neural_network_web'
     archiveVersion = "${project.version}"
 }
@@ -65,3 +46,13 @@ test {
         events "passed", "skipped", "failed"
     }
 }
+
+task copy(type: Copy) {
+    from configurations.train
+    into 'build/libs'
+}
+
+bootJar.mustRunAfter clean
+copy.mustRunAfter clean
+build.dependsOn bootJar
+build.dependsOn copy
