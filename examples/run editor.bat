@@ -1,0 +1,1 @@
+java -jar libs/neural_network_web-1.0.jar

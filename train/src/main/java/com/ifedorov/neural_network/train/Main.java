@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -65,8 +66,8 @@ public class Main {
             @CommandLine.Option(names = {"--trainingOutputFile" }, description = "Path to file with training data set", required = true)
             private File trainingOutputFile;
 
-            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = false)
-            private Double accuracy;
+//            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = false)
+//            private Double accuracy;
 
             @CommandLine.Option(names = {"--trainingTestSetFile" }, description = "Path to file with test data set", required = true)
             private File testSetFile;
@@ -107,7 +108,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Options options = new Options();
         CommandLine cmd = new CommandLine(options);
-        cmd.setResourceBundle(ResourceBundle.getBundle("Messages"));
+        cmd.setResourceBundle(Utf8ResourceBundle.getBundle("Messages"));
         cmd.parseArgs(args);
         if(cmd.isUsageHelpRequested()) {
             cmd.usage(System.out);
