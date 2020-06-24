@@ -50,7 +50,7 @@ task copyTrainJar(type: Copy) {
 }
 
 task pack(type: Zip, dependsOn: 'build') {
-    archiveFileName = "neural-network.zip"
+    archiveFileName = "neural-network-${project.version}.zip"
     destinationDirectory = file("$buildDir")
 
     from "$buildDir/libs", {
