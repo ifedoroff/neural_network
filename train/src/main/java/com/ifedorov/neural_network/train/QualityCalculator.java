@@ -3,8 +3,11 @@ package com.ifedorov.neural_network.train;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public class QualityCalculator {
+
+    public static final ResourceBundle localization = Utf8ResourceBundle.getBundle("Messages");
 
     public Quality calculateQuality(List<BigDecimalWrapper> expectedOutputs, List<BigDecimalWrapper> actualOutputs) {
         BigDecimal truePositive = truePositive(expectedOutputs, actualOutputs);
@@ -143,11 +146,11 @@ public class QualityCalculator {
 
         @Override
         public String toString() {
-            return "Quality{" +
-                    "accuracy=" + accuracy +
-                    ", adequacy=" + adequacy +
-                    ", specificity=" + specificity +
-                    ", average=" + average +
+            return localization.getString("quality") + " {" +
+                    localization.getString("accuracy") + "=" + accuracy +
+                    ", " + localization.getString("adequacy") + "=" + adequacy +
+                    ", " + localization.getString("specificity") + "=" + specificity +
+                    ", " + localization.getString("average") + "=" + average +
                     '}';
         }
     }

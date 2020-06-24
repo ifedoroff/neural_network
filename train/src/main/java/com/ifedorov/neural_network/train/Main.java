@@ -20,6 +20,8 @@ import static com.ifedorov.neural_network.train.QualityCalculator.*;
 
 public class Main {
 
+    public static final ResourceBundle localization = Utf8ResourceBundle.getBundle("Messages");
+
     public static class Options {
         @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
         private boolean helpRequested = false;
@@ -108,15 +110,12 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Options options = new Options();
         CommandLine cmd = new CommandLine(options);
-        cmd.setResourceBundle(Utf8ResourceBundle.getBundle("Messages"));
+        cmd.setResourceBundle(localization);
         cmd.parseArgs(args);
         if(cmd.isUsageHelpRequested()) {
             cmd.usage(System.out);
             return;
         }
-//        if(options.executionMode == null) {
-//            throw new RuntimeException("Please specify one of the execution modes");
-//        }
         Options.Training train = options.executionMode.training;
         Options.Predict predict = options.executionMode.predict;
         Options.Test test = options.executionMode.test;
@@ -159,9 +158,13 @@ public class Main {
         List<NormalizedTrainingDataSet> normalizedDataSet = NormalizedTrainingDataSet.asNormalized(
                 TrainingDataSet.loadFromXLSFile(test.testSetFile.toPath(), model.getInputDimension(), model.getOutputDimension())
         );
+        testModel(model, normalizedDataSet, test.testOutputFile);
+    }
+
+    private static void testModel(Model model, List<NormalizedTrainingDataSet> normalizedDataSet, File testOutputFile) {
         TestResult testResult = model.test(normalizedDataSet);
-        testResult.saveTo(test.testOutputFile);
-        List<BigDecimalWrapper> expectedOutputs = normalizedDataSet.stream().map(dataSet -> dataSet.getOutputValues().get(0)).collect(Collectors.toList());
+        testResult.saveTo(testOutputFile);
+        List<BigDecimalWrapper> expectedOutputs = testResult.dataSets.stream().map(dataSet -> dataSet.getOutputValues().get(0)).collect(Collectors.toList());
         List<BigDecimalWrapper> actualOutputs = testResult.dataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
         System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
     }
@@ -178,12 +181,12 @@ public class Main {
              OutputStream outputStream = new FileOutputStream(train.statisticsFile)){
             XSSFSheet sheet = workbook.createSheet();
             XSSFRow firstRow = sheet.createRow(0);
-            firstRow.createCell(0).setCellValue("epoch");
-            firstRow.createCell(1).setCellValue("accuracy");
-            firstRow.createCell(2).setCellValue("accuracy");
-            firstRow.createCell(3).setCellValue("adequacy");
-            firstRow.createCell(4).setCellValue("specificity");
-            firstRow.createCell(5).setCellValue("average");
+            firstRow.createCell(0).setCellValue(localization.getString("epoch"));
+            firstRow.createCell(1).setCellValue(localization.getString("error"));
+            firstRow.createCell(2).setCellValue(localization.getString("accuracy"));
+            firstRow.createCell(3).setCellValue(localization.getString("adequacy"));
+            firstRow.createCell(4).setCellValue(localization.getString("specificity"));
+            firstRow.createCell(5).setCellValue(localization.getString("average"));
             BaseStopIndicator.Listener listener = new BaseStopIndicator.Listener() {
 
                 @Override
@@ -206,14 +209,10 @@ public class Main {
                                     new Quality(BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95)),
                                     listener)
                     );
-            System.out.println("accuracy: " + result.accuracy);
-            System.out.println("epochs: " + result.epochs);
+            System.out.println(localization.getString("accuracy") + ": " + result.accuracy);
+            System.out.println(localization.getString("epochs") + ": " + result.epochs);
             model.printState();
-            TestResult testResult = model.test(normalizedTestSet);
-            testResult.saveTo(train.testOutputFile);
-            List<BigDecimalWrapper> expectedOutputs = testResult.dataSets.stream().map(testSet -> testSet.getOutputValues().get(0)).collect(Collectors.toList());
-            List<BigDecimalWrapper> actualOutputs = testResult.dataSets.stream().map(o -> o.getActualOutput().get(0)).collect(Collectors.toList());
-            System.out.println(new QualityCalculator().calculateQuality(expectedOutputs, actualOutputs));
+            testModel(model, normalizedTestSet, train.testOutputFile);
             model.saveTo(train.trainingOutputFile.toPath());
             workbook.write(outputStream);
         } catch (IOException e) {

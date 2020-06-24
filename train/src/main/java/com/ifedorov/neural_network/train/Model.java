@@ -28,6 +28,8 @@ public class Model {
     private LinkedList<List<Neuron>> tiers = new LinkedList<>();
     private List<WeightMatrix> weightMatrices;
 
+    public static final ResourceBundle localization = Utf8ResourceBundle.getBundle("Messages");
+
     public Model(List<List<Neuron>> tiers, List<WeightMatrix> weightMatrices, BigDecimalWrapper learningFactor) {
         this.learningFactor = learningFactor;
         if(tiers.size() != weightMatrices.size())
@@ -199,11 +201,11 @@ public class Model {
     public void printState() {
         IntStream.range(0, tiers.size())
                 .forEach(index -> {
-                    System.out.println("Level: " + index);
+                    System.out.println(localization.getString("level") + ": " + index);
                     System.out.println();
-                    System.out.println("Weights:");
+                    System.out.println(localization.getString("weights") + ":");
                     weightMatrices.get(index).printState();
-                    System.out.println("Neurons:");
+                    System.out.println(localization.getString("neurons") + ":");
                     tiers.get(index).forEach(neuron -> System.out.printf("%4.2f | ", neuron.currentValue().bigDecimal()));
                     System.out.println();
                     System.out.println();
@@ -231,9 +233,9 @@ public class Model {
 
         Iterator<Sheet> sheets = workbook.sheetIterator();
         Sheet firstSheet = sheets.next();
-        builder.learningFactor(BigDecimal.valueOf(firstSheet.getRow(0).getCell(0).getNumericCellValue()));
-        int inputTierSize = BigDecimal.valueOf(firstSheet.getRow(1).getCell(0).getNumericCellValue()).intValue();
-        int outputTierSize = BigDecimal.valueOf(firstSheet.getRow(1).getCell(1).getNumericCellValue()).intValue();
+        builder.learningFactor(BigDecimal.valueOf(firstSheet.getRow(0).getCell(1).getNumericCellValue()));
+        int inputTierSize = BigDecimal.valueOf(firstSheet.getRow(1).getCell(1).getNumericCellValue()).intValue();
+        int outputTierSize = BigDecimal.valueOf(firstSheet.getRow(2).getCell(1).getNumericCellValue()).intValue();
         builder.expectedInputSize(inputTierSize).expectedOutputSize(outputTierSize);
         int previousTierSize = inputTierSize;
         while (sheets.hasNext()) {
@@ -293,16 +295,23 @@ public class Model {
 
     public void saveTo(OutputStream outputStream) {
         try(XSSFWorkbook workbook = new XSSFWorkbook()) {
-            XSSFSheet firstSheet = workbook.createSheet("Learning Factor");
-            firstSheet
-                    .createRow(0)
+            XSSFSheet firstSheet = workbook.createSheet(localization.getString("learningFactor"));
+            XSSFRow firstRow = firstSheet
+                    .createRow(0);
+            firstRow
                     .createCell(0)
+                    .setCellValue(localization.getString("learningFactor"));
+            firstRow
+                    .createCell(1)
                     .setCellValue(learningFactor.bigDecimal().doubleValue());
-            XSSFRow firstRow = firstSheet.createRow(1);
-            firstRow.createCell(0).setCellValue(getInputDimension());
-            firstRow.createCell(1).setCellValue(getOutputDimension());
+            XSSFRow secondRow = firstSheet.createRow(1);
+            secondRow.createCell(0).setCellValue(localization.getString("inputDimension"));
+            secondRow.createCell(1).setCellValue(getInputDimension());
+            XSSFRow thirdRow = firstSheet.createRow(2);
+            thirdRow.createCell(0).setCellValue(localization.getString("outputDimension"));
+            thirdRow.createCell(1).setCellValue(getOutputDimension());
             for (int i = 0; i < tiers.size(); i++) {
-                XSSFSheet sheet = workbook.createSheet("Tier " + (i + 1));
+                XSSFSheet sheet = workbook.createSheet(localization.getString("Tier") + " " + (i + 1));
                 WeightMatrix weights = weightMatrices.get(i);
                 List<Neuron> tier = tiers.get(i);
                 XSSFRow neuronRow = sheet.createRow(0);
