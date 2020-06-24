@@ -1,7 +1,6 @@
 package com.ifedorov.neural_network.train;
 
 import com.ifedorov.neural_network.train.dataset.*;
-import com.ifedorov.neural_network.train.dataset.*;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -12,7 +11,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -21,91 +19,6 @@ import static com.ifedorov.neural_network.train.QualityCalculator.*;
 public class Main {
 
     public static final ResourceBundle localization = Utf8ResourceBundle.getBundle("Messages");
-
-    public static class Options {
-        @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
-        private boolean helpRequested = false;
-
-        @CommandLine.Option(names = {"--model" }, required = true, description = "Path to file with Neural Network weights/neurons configuration")
-        private File modelInputFile;
-
-        @CommandLine.ArgGroup(exclusive = true, validate = true)
-        private Mode executionMode;
-
-        static class Mode {
-            @CommandLine.ArgGroup(exclusive = false)
-            ConvertModel convert;
-
-            @CommandLine.ArgGroup(exclusive = false)
-            Training training;
-
-            @CommandLine.ArgGroup(exclusive = false)
-            Predict predict;
-
-            @CommandLine.ArgGroup(exclusive = false)
-            Test test;
-        }
-
-        static class ConvertModel {
-            enum Type {
-                json, xlsx
-            }
-
-            @CommandLine.Option(names = {"--convert-from-type" }, description = "The type of the input model file", required = true)
-            private Type fromType;
-            @CommandLine.Option(names = {"--convert-to-type" }, description = "The type of the input model file", required = true)
-            private Type toType;
-            @CommandLine.Option(names = {"--convert-result-file" }, description = "Output model file", required = true)
-            private File outputFile;
-        }
-
-        static class Training {
-
-
-            @CommandLine.Option(names = {"--trainSetFile" }, description = "Path to file with training data set", required = true)
-            private File trainingSetFile;
-
-            @CommandLine.Option(names = {"--trainingOutputFile" }, description = "Path to file with training data set", required = true)
-            private File trainingOutputFile;
-
-//            @CommandLine.Option(names = {"--trainingAccuracy" }, description = "Path to file with training data set", required = false)
-//            private Double accuracy;
-
-            @CommandLine.Option(names = {"--trainingTestSetFile" }, description = "Path to file with test data set", required = true)
-            private File testSetFile;
-
-            @CommandLine.Option(names = {"--trainingTestOutputFile" }, description = "Path to file with test data set", required = true)
-            private File testOutputFile;
-
-            @CommandLine.Option(names = {"--trainingEpochs" }, description = "Path to file with training data set", required = true)
-            private int epochs;
-
-            @CommandLine.Option(names = {"--trainingEpochsBetweenTest" }, description = "Path to file with training data set", required = true)
-            private int epochsBetweenTest;
-
-            @CommandLine.Option(names = {"--statisticsFile" }, description = "Path to file with test data set", required = true)
-            private File statisticsFile;
-
-            @CommandLine.Option(names = {"--normalizedTrainSetFile" }, description = "Path where to save normalized training data set", required = true)
-            private File normalizedTrainingSetOutputFile;
-        }
-
-        static class Predict {
-            @CommandLine.Option(names = {"--predictSetFile" }, description = "Path to file with test data set", required = true)
-            private File predictSetFile;
-
-            @CommandLine.Option(names = {"--predictOutputFile" }, description = "Path to file with test data set", required = true)
-            private File predictOutputFile;
-        }
-
-        static class Test {
-            @CommandLine.Option(names = {"--testSetFile" }, description = "Path to file with test data set", required = true)
-            private File testSetFile;
-
-            @CommandLine.Option(names = {"--testOutputFile" }, description = "Path to file with test data set", required = true)
-            private File testOutputFile;
-        }
-    }
 
     public static void main(String[] args) throws IOException {
         Options options = new Options();
@@ -187,10 +100,10 @@ public class Main {
             firstRow.createCell(3).setCellValue(localization.getString("adequacy"));
             firstRow.createCell(4).setCellValue(localization.getString("specificity"));
             firstRow.createCell(5).setCellValue(localization.getString("average"));
-            BaseStopIndicator.Listener listener = new BaseStopIndicator.Listener() {
+           StatisticWriter statisticWriter = new StatisticWriter() {
 
                 @Override
-                public void statistics(long epoch, BigDecimal accuracy, Quality calculatedQuality) {
+                public void write(long epoch, BigDecimal accuracy, Quality calculatedQuality) {
                     XSSFRow row = sheet.createRow((int) epoch + 1);
                     row.createCell(0).setCellValue(epoch);
                     row.createCell(1).setCellValue(accuracy.doubleValue());
@@ -202,15 +115,17 @@ public class Main {
                     }
                 }
             };
+            BaseStopIndicator stopIndicator = new BaseStopIndicator(train.epochs, train.epochsBetweenTest, new Quality(BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95)));
             TrainingResult result = model
                     .train(
                             normalizedTrainingSet,
-                            new BaseStopIndicator(train.epochs, train.epochsBetweenTest, normalizedTestSet,
-                                    new Quality(BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95)),
-                                    listener)
+                            normalizedTestSet,
+                            stopIndicator,
+                            statisticWriter
                     );
             System.out.println(localization.getString("accuracy") + ": " + result.accuracy);
             System.out.println(localization.getString("epochs") + ": " + result.epochs);
+            System.out.println();
             model.printState();
             testModel(model, normalizedTestSet, train.testOutputFile);
             model.saveTo(train.trainingOutputFile.toPath());

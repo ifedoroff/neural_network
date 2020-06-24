@@ -58,10 +58,11 @@ public class Model {
         return weightMatrices.get(level);
     }
 
-    public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, StopIndicator stopIndicator) {
+    public TrainingResult train(List<NormalizedTrainingDataSet> trainingDataSets, List<NormalizedTrainingDataSet> testDataSet, StopIndicator stopIndicator, StatisticWriter statisticWriter) {
         int epoch = 0;
         BigDecimalWrapper accuracy = BigDecimalWrapper.ONE.add(BigDecimalWrapper.ONE);
-        while(!stopIndicator.shouldStopTraining(this, epoch, accuracy)) {
+        QualityCalculator.Quality quality = QualityCalculator.Quality.ZERO;
+        while(!stopIndicator.shouldStopTraining(quality, epoch)) {
             accuracy = BigDecimalWrapper.ZERO;
 
             for (NormalizedTrainingDataSet trainingDataSet : trainingDataSets) {
@@ -71,10 +72,20 @@ public class Model {
                 accuracy = accuracy.add(currentError);
             }
             accuracy = accuracy.divide(new BigDecimalWrapper(trainingDataSets.size()));
+            quality = calculateQuality(testDataSet);
+            statisticWriter.write(epoch, accuracy.bigDecimal(), quality);
             epoch++;
         }
         return new TrainingResult(epoch, accuracy, trainingDataSets);
     }
+
+    private QualityCalculator.Quality calculateQuality(List<NormalizedTrainingDataSet> testDataSet) {
+        List<? extends TrainingDataSet> testResult = test(testDataSet).dataSets;
+        List<BigDecimalWrapper> actualOutput = testResult.stream().map(TrainingDataSet::getActualOutput).map(list -> list.get(0)).collect(Collectors.toList());
+        List<BigDecimalWrapper> expectedOutput = testResult.stream().map(o -> o.getOutputValues()).map(list -> list.get(0)).collect(Collectors.toList());
+        return new QualityCalculator().calculateQuality(expectedOutput, actualOutput);
+    }
+
 
     public BigDecimalWrapper train(NormalizedTrainingDataSet trainingDataSet) {
         if(trainingDataSet.getOutputValues().size() != tiers.getLast().size())
@@ -201,7 +212,7 @@ public class Model {
     public void printState() {
         IntStream.range(0, tiers.size())
                 .forEach(index -> {
-                    System.out.println(localization.getString("level") + ": " + index);
+                    System.out.printf("========================%s==========================\n", localization.getString("level") + ": " + index);
                     System.out.println();
                     System.out.println(localization.getString("weights") + ":");
                     weightMatrices.get(index).printState();

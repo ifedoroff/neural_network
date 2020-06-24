@@ -65,12 +65,7 @@ public class TestModel {
 //      epoch++;
 //    }
     QualityCalculator.Quality quality = new QualityCalculator.Quality(new BigDecimal(0.95), new BigDecimal(0.95), new BigDecimal(0.95), new BigDecimal(0.95));
-    model.train(trainingDataSets, new BaseStopIndicator(1000000, 100000, trainingDataSets, quality, new BaseStopIndicator.Listener() {
-      @Override
-      public void statistics(long epoch, BigDecimal accuracy, QualityCalculator.Quality calculatedQuality) {
-
-      }
-    }));
+    model.train(trainingDataSets, trainingDataSets, new BaseStopIndicator(1000000, 100000, quality), (epoch1, accuracy, calculatedQuality) -> {});
     model.printState();
   }
 

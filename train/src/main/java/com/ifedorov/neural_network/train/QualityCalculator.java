@@ -132,6 +132,7 @@ public class QualityCalculator {
     }
 
     public static class Quality{
+        public static final Quality ZERO = new Quality(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
         public final BigDecimal accuracy;
         public final BigDecimal adequacy;
         public final BigDecimal specificity;
