@@ -50,7 +50,10 @@ public class Main {
             XSSFSheet sheet = workbook.createSheet();
             for (int i = 0; i < predictionDataSets.size(); i++) {
                 PredictionDataSet result = model.predict(predictionDataSets.get(i));
-                XSSFRow row = sheet.createRow(i);
+                if(i == 0) {
+                    writeHeader(predictionDataSets, sheet);
+                }
+                XSSFRow row = sheet.createRow(i + 1);
                 List<BigDecimalWrapper> inputs = result.getInputValues();
                 for (int j = 0; j < inputs.size(); j++) {
                     row.createCell(j).setCellValue(inputs.get(j).bigDecimal().doubleValue());
@@ -64,6 +67,19 @@ public class Main {
             workbook.write(os);
         } catch (IOException e) {
             throw new RuntimeException("Unable to write prediction results", e);
+        }
+    }
+
+    private static void writeHeader(List<NormalizedPredictionDataSet> predictionDataSets, XSSFSheet sheet) {
+        XSSFRow header = sheet.createRow(0);
+        int k = 0;
+        for (k = 0; k < predictionDataSets.get(0).getInputValues().size(); k++) {
+            header.createCell(k).setCellValue(localization.getString("parameter") + " " + (k + 1));
+            sheet.autoSizeColumn(k);
+        }
+        for (int j = 0; j < predictionDataSets.get(0).getOutput().size(); j++, k++) {
+            header.createCell(k + j).setCellValue(localization.getString("actualOutput") + " " + (j + 1));
+            sheet.autoSizeColumn(k + j);
         }
     }
 
@@ -126,7 +142,7 @@ public class Main {
             System.out.println(localization.getString("accuracy") + ": " + result.accuracy);
             System.out.println(localization.getString("epochs") + ": " + result.epochs);
             System.out.println();
-            model.printState();
+//            model.printState();
             testModel(model, normalizedTestSet, train.testOutputFile);
             model.saveTo(train.trainingOutputFile.toPath());
             workbook.write(outputStream);

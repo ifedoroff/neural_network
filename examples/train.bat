@@ -1,5 +1,5 @@
 java -jar -Duser.language=ru -Duser.region=RU libs/train-@project.version@.jar ^
---model input/test_model_real.xlsx ^
+--model input/not_trained_model.xlsx ^
 --trainSetFile input/trainingSetReal.xlsx ^
 --trainingOutputFile output/model.xlsx ^
 --trainingTestSetFile input/testSetReal.xlsx ^
