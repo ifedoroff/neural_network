@@ -8,7 +8,7 @@ var Tier = BaseTier.extend({
     },
 
     getLabelText: function() {
-        return 'Tier ' + this.level
+        return $.i18n('tier') + ' ' + this.level;
     },
 
     createNeuron: function(position, activationFn, isDummy) {
@@ -44,8 +44,8 @@ var Tier = BaseTier.extend({
             y:y,
             items:
                 {
-                    "addNeuron":    {name: "Add Neuron"},
-                    "delete":  {name: "Delete"}
+                    "addNeuron":    {name: $.i18n('addNeuron')},
+                    "delete":  {name: $.i18n('delete')}
                 }
         });
     },

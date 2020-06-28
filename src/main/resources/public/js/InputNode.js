@@ -47,7 +47,7 @@ var InputNode = draw2d.shape.basic.Circle.extend({
             y:y,
             items:
                 {
-                    "delete":  {name: "Delete"}
+                    "delete":  {name: $.i18n('delete')}
                 }
         });
     },

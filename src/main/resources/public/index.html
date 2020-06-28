@@ -1,4 +1,4 @@
-﻿<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+﻿<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="ru" dir="ltr">
 <head>
 <title></title>
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,6 +30,14 @@
     <script src="js/ShowWeightSelectionPolicy.js"></script>
     <script src="js/ShowWeightsSelectionPolicy.js"></script>
 
+    <script src="lib/jquery.i18n.min.js"></script>
+    <script src="lib/jquery.i18n.messagestore.min.js"></script>
+    <script src="lib/jquery.i18n.fallbacks.min.js"></script>
+    <script src="lib/jquery.i18n.parser.min.js"></script>
+    <script src="lib/jquery.i18n.emitter.min.js"></script>
+    <script src="lib/jquery.i18n.language.min.js"></script>
+    <script src="lib/ru.min.js"></script>
+
 <script type="text/javascript">
 
 // just for debugging
@@ -39,6 +47,33 @@ var circle =null;
 var rect =null;
 
 // end debug variables
+
+$.i18n().load({
+    'en': {
+        'tier': 'Tier',
+        'inputTier': 'Input Tier',
+        'delete': 'Delete',
+        'addInputNode': 'Add input node',
+        'addNeuron': 'Add Neuron',
+        'dummy': 'Make dummy',
+        'real': 'Make real',
+        'showWeights': 'Show Weights',
+        'addTier': 'Add Tier',
+        'addInputTier': 'Add Input Tier'
+    },
+    'ru' : {
+        'tier': 'Слой',
+        'inputTier': 'Входной слой',
+        'delete': 'Удалить',
+        'addInputNode': 'Добавить входной параметр',
+        'addNeuron': 'Добавить нейрон',
+        'dummy': 'Сделать фиктивной',
+        'real': 'Сделать реальной',
+        'showWeights': 'Показать веса',
+        'addTier': 'Добавить скрытый слой',
+        'addInputTier': 'Добавить входной слой'
+    }
+});
 
 document.addEventListener("DOMContentLoaded",function () {
 
@@ -90,8 +125,8 @@ document.addEventListener("DOMContentLoaded",function () {
             y:y,
             items:
             {
-                "inputTier":    {name: 'Add Input Tier'},
-                "newTier":    {name: 'Add Tier'}
+                "inputTier":    {name: $.i18n('addInputTier')},
+                "newTier":    {name: $.i18n('addTier')}
             }
         });
 

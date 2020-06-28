@@ -6,7 +6,7 @@ var InputTier = BaseTier.extend({
     },
 
     getLabelText: function() {
-        return 'Input Tier';
+        return $.i18n('inputTier');
     },
 
     createNeuron: function(position) {
@@ -23,7 +23,7 @@ var InputTier = BaseTier.extend({
             callback: function(key, options)
             {
                 switch(key){
-                    case "addNeuron":
+                    case "addInputNode":
                         this.addNeuron();
                         break;
                     case "delete":
@@ -42,8 +42,8 @@ var InputTier = BaseTier.extend({
             y:y,
             items:
                 {
-                    "addNeuron":    {name: "Add Input Node"},
-                    "delete":  {name: "Delete"}
+                    "addInputNode":    {name: $.i18n('addInputNode')},
+                    "delete":  {name: $.i18n('delete')}
                 }
         });
     },

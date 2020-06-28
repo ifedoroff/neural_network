@@ -1,1 +1,1 @@
-java -jar libs/neural_network_web-1.0.jar
+java -jar libs/neural_network_web-@project.version@.jar

@@ -1,3 +1,4 @@
+import org.apache.tools.ant.filters.ReplaceTokens
 buildscript {
     ext {
         springBootVersion = '2.0.1.RELEASE'
@@ -14,7 +15,7 @@ apply plugin: 'java'
 apply plugin: "org.springframework.boot"
 
 group 'com.ifedorov'
-version '1.1'
+version '1.2'
 
 sourceCompatibility = 1.8
 
@@ -29,6 +30,22 @@ dependencies {
     compile project(':train')
 }
 
+task processBatchFiles(type: ProcessResources) {
+    from 'examples', {
+        include "*.bat"
+    }
+    destinationDir file("$buildDir/examples")
+    filter ReplaceTokens, tokens: [
+            "project.version": project.version
+    ]
+}
+
+task copyExamples(type: Copy) {
+    from 'examples', {
+        exclude "*.bat"
+    }
+    destinationDir file("$buildDir/examples")
+}
 
 bootJar {
     archiveBaseName = 'neural_network_web'
@@ -52,14 +69,18 @@ task copyTrainJar(type: Copy) {
 task pack(type: Zip, dependsOn: 'build') {
     archiveFileName = "neural-network-${project.version}.zip"
     destinationDirectory = file("$buildDir")
-
     from "$buildDir/libs", {
         into 'libs'
     }
-    from "examples"
+    from "$buildDir/examples"
 }
+
 
 bootJar.mustRunAfter clean
 copyTrainJar.mustRunAfter clean
+processBatchFiles.mustRunAfter clean
+copyExamples.mustRunAfter clean
 build.dependsOn bootJar
 build.dependsOn copyTrainJar
+build.dependsOn processBatchFiles
+build.dependsOn copyExamples

@@ -1,1 +1,2 @@
-java -jar -Duser.language=ru -Duser.region=RU libs/train-1.0.jar --help
+java -jar -Duser.language=ru -Duser.region=RU libs/train-@project.version@.jar --help
+pause

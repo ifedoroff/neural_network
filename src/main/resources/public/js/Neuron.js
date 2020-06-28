@@ -94,10 +94,10 @@ var Neuron = draw2d.shape.basic.Circle.extend({
             y:y,
             items:
                 {
-                    "delete":  {name: "Delete"},
-                    "dummy":  {name: "Dummy"},
-                    "real":  {name: "Real"},
-                    "showWeights": {name: "Show Weights"}
+                    "delete":  {name: $.i18n('delete')},
+                    "dummy":  {name: $.i18n('dummy')},
+                    "real":  {name: $.i18n('real')},
+                    "showWeights": {name: $.i18n('showWeights')}
                 }
         });
     },

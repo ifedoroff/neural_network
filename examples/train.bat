@@ -1,4 +1,4 @@
-java -jar -Duser.language=ru -Duser.region=RU libs/train-1.0.jar ^
+java -jar -Duser.language=ru -Duser.region=RU libs/train-@project.version@.jar ^
 --model input/test_model_real.xlsx ^
 --trainSetFile input/trainingSetReal.xlsx ^
 --trainingOutputFile output/model.xlsx ^
@@ -8,3 +8,4 @@ java -jar -Duser.language=ru -Duser.region=RU libs/train-1.0.jar ^
 --trainingEpochsBetweenTest 5 ^
 --statisticsFile output/statistics.xlsx ^
 --normalizedTrainSetFile output/normalized_training_set.xlsx
+pause

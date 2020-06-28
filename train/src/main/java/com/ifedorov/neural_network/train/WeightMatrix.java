@@ -84,7 +84,12 @@ public class WeightMatrix {
         for (int i = 0; i < data.length; i++) {
             BigReal[] row = data[i];
             for (int j = 0; j < row.length; j++) {
-                System.out.printf("%4.2f | ", row[j].bigDecimalValue());
+                BigDecimal weight = row[j].bigDecimalValue();
+                if(weight == null) {
+                    System.out.println("    ");
+                } else {
+                    System.out.printf("%4.2f | ", weight);
+                }
             }
             System.out.println();
         }

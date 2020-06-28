@@ -212,7 +212,7 @@ public class Model {
     public void printState() {
         IntStream.range(0, tiers.size())
                 .forEach(index -> {
-                    System.out.printf("========================%s==========================\n", localization.getString("level") + ": " + index);
+                    System.out.printf("========================%s==========================\n", localization.getString("level") + ": " + (index + 1));
                     System.out.println();
                     System.out.println(localization.getString("weights") + ":");
                     weightMatrices.get(index).printState();
